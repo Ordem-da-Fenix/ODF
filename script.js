@@ -1,7 +1,6 @@
 // Elementos do DOM
 const modal = document.getElementById('modal-detalhes');
 const loginModal = document.getElementById('loginModal');
-const loginBtn = document.getElementById('loginBtn');
 const spans = document.getElementsByClassName('close');
 const loginForm = document.getElementById('loginForm');
 const compressores = document.querySelectorAll('.compressor');
@@ -65,26 +64,44 @@ function atualizarDadosTempoReal() {
     temperaturaElement.textContent = `${dados.temperatura} °C`;
 }
 
-// Login Modal
-loginBtn.addEventListener('click', () => {
-    loginModal.style.display = 'block';
-});
+// Função para fechar modal
+function fecharModal() {
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto'; // Restaurar scroll
+    
+    // Limpar intervalo de atualização
+    if (window.intervaloDados) {
+        clearInterval(window.intervaloDados);
+    }
+}
 
 // Fechar modais ao clicar no X
 Array.from(spans).forEach(span => {
     span.addEventListener('click', function() {
-        modal.style.display = 'none';
-        loginModal.style.display = 'none';
+        fecharModal();
+        loginModal.classList.add('hidden');
     });
 });
 
 // Fechar modais ao clicar fora
 window.addEventListener('click', (event) => {
     if (event.target == modal) {
-        modal.style.display = 'none';
+        fecharModal();
     }
     if (event.target == loginModal) {
-        loginModal.style.display = 'none';
+        loginModal.classList.add('hidden');
+    }
+});
+
+// Fechar modal com tecla ESC
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        if (!modal.classList.contains('hidden')) {
+            fecharModal();
+        }
+        if (!loginModal.classList.contains('hidden')) {
+            loginModal.classList.add('hidden');
+        }
     }
 });
 
@@ -95,7 +112,7 @@ loginForm.addEventListener('submit', (e) => {
     const data = Object.fromEntries(formData);
     console.log('Dados do formulário:', data);
     // Aqui você pode adicionar a lógica de autenticação
-    loginModal.style.display = 'none';
+    loginModal.classList.add('hidden');
 });
 
 // Event Listeners dos compressores
@@ -103,26 +120,31 @@ compressores.forEach(compressor => {
     compressor.addEventListener('click', () => {
         const compressorId = compressor.getAttribute('data-id');
         compressorIdElement.textContent = compressorId;
-        modal.style.display = 'block';
+        
+        // Mostrar modal removendo a classe hidden
+        modal.classList.remove('hidden');
+        
+        // Centralizar o modal (já está centralizado pelo CSS Tailwind)
+        document.body.style.overflow = 'hidden'; // Prevenir scroll
         
         if (!chart) {
-            inicializarGrafico();
+            // Aguardar um pouco para o modal aparecer antes de inicializar o gráfico
+            setTimeout(() => {
+                inicializarGrafico();
+            }, 100);
         }
         
         // Iniciar atualização em tempo real
         atualizarDadosTempoReal();
-        setInterval(atualizarDadosTempoReal, 2000);
+        
+        // Limpar intervalos anteriores se existirem
+        if (window.intervaloDados) {
+            clearInterval(window.intervaloDados);
+        }
+        
+        // Criar novo intervalo
+        window.intervaloDados = setInterval(atualizarDadosTempoReal, 2000);
     });
-});
-
-span.addEventListener('click', () => {
-    modal.style.display = 'none';
-});
-
-window.addEventListener('click', (event) => {
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
 });
 
 // Atualizar dados do gráfico periodicamente
