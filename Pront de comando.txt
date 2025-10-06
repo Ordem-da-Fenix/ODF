@@ -1,0 +1,2 @@
+crie um site html css java escript colocando um título sendo ODF/MDC e em baixo do titulo coloque monitoramento de compressão no canto superior esquerdo
+em um modal de tamanho médio no centro da tela que tem uma lista de compressores online /offline,sendo um compressor em sequência um de baixo do outro, ao clicar sera levado para um modal, contendo as seguintes informações : um grafíco de gastos energéticos,e em tempo real coloque a pressão e a temperatura em forma de dados

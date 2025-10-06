@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OFtech - Monitoramento de Compressores</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="title-section">
+                <h1>OFtech</h1>
+                <h2>Monitoramento de Compressão</h2>
+            </div>
+            <div class="login-section">
+                <button id="loginBtn">Login</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal de Login -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content login-form">
+            <span class="close">&times;</span>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required>
+                </div>
+                <div class="form-group">
+                    <label for="telefone">Telefone</label>
+                    <input type="tel" id="telefone" name="telefone" required>
+                </div>
+                <button type="submit">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-compressores">
+        <h3>Lista de Compressores</h3>
+        <div class="lista-compressores">
+            <div class="compressor online" data-id="1">
+                <span class="status"></span>
+                Compressor 1 - Online
+            </div>
+            <div class="compressor offline" data-id="2">
+                <span class="status"></span>
+                Compressor 2 - Offline
+            </div>
+            <div class="compressor online" data-id="3">
+                <span class="status"></span>
+                Compressor 3 - Online
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de detalhes do compressor -->
+    <div id="modal-detalhes" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Detalhes do Compressor <span id="compressor-id"></span></h2>
+            <div class="dados-tempo-real">
+                <div class="dado">
+                    <h3>Pressão</h3>
+                    <p id="pressao">0 PSI</p>
+                </div>
+                <div class="dado">
+                    <h3>Temperatura</h3>
+                    <p id="temperatura">0 °C</p>
+                </div>
+            </div>
+            <div class="grafico">
+                <canvas id="graficoEnergia"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
