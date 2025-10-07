@@ -6,21 +6,8 @@ export class ChartManager {
     constructor() {
         this.chart = null;
         this.ctx = document.getElementById('graficoEnergia').getContext('2d');
-        this.dadosEnergia = {
-            labels: Array.from({length: 24}, (_, i) => `${i}h`),
-            datasets: [{
-                label: 'Consumo de Energia (kWh)',
-                data: Array.from({length: 24}, () => Math.random() * 100),
-                borderColor: '#ea580c', // Cor laranja da OFtech
-                backgroundColor: 'rgba(234, 88, 12, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: '#ea580c',
-                pointBorderColor: '#c2410c',
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        };
+        this.metric = 'consumo'; // default: consumo
+        this.dados = this._buildDataForMetric(this.metric);
         
         this.intervalGrafico = null;
     }
@@ -32,7 +19,7 @@ export class ChartManager {
 
         this.chart = new Chart(this.ctx, {
             type: 'line',
-            data: this.dadosEnergia,
+            data: this.dados,
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -109,6 +96,54 @@ export class ChartManager {
 
         // Iniciar atualização automática do gráfico
         this.iniciarAtualizacaoAutomatica();
+    }
+
+    /**
+     * Muda a métrica exibida no gráfico (pressao | temperatura | consumo)
+     */
+    setMetric(metric) {
+        this.metric = metric;
+        this.dados = this._buildDataForMetric(metric);
+        if (this.chart) {
+            this.chart.data = this.dados;
+            this.chart.update();
+        }
+    }
+
+    _buildDataForMetric(metric) {
+        const labels = Array.from({length: 24}, (_, i) => `${i}h`);
+        let dataset = {};
+
+        if (metric === 'pressao') {
+            dataset = {
+                label: 'Pressão (PSI)',
+                data: Array.from({length: 24}, () => Math.random() * 30 + 70),
+                borderColor: '#ea580c',
+                backgroundColor: 'rgba(234,88,12,0.06)',
+                tension: 0.3,
+                fill: true
+            };
+        } else if (metric === 'temperatura') {
+            dataset = {
+                label: 'Temperatura (°C)',
+                data: Array.from({length: 24}, () => Math.random() * 15 + 20),
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239,68,68,0.06)',
+                tension: 0.3,
+                fill: true
+            };
+        } else { // consumo
+            dataset = {
+                label: 'Consumo de Energia (kWh)',
+                data: Array.from({length: 24}, () => Math.random() * 60 + 20),
+                borderColor: '#ea580c',
+                backgroundColor: 'rgba(234,88,12,0.06)',
+                tension: 0.3,
+                fill: true
+            };
+        }
+
+        return { labels, datasets: [dataset] };
     }
 
     iniciarAtualizacaoAutomatica() {

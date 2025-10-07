@@ -180,36 +180,7 @@ export const compressoresMock = [
     }
 ];
 
-// Dados de usuários para simulação de login
-export const usuariosMock = [
-    {
-        id: 1,
-        nome: 'João Silva',
-        email: 'joao.silva@oftech.com',
-        senha: '123456',
-        telefone: '(11) 99999-9999',
-        cargo: 'Técnico de Manutenção',
-        permissoes: ['leitura', 'monitoramento']
-    },
-    {
-        id: 2,
-        nome: 'Maria Santos',
-        email: 'maria.santos@oftech.com', 
-        senha: 'admin123',
-        telefone: '(11) 88888-8888',
-        cargo: 'Supervisora de Produção',
-        permissoes: ['leitura', 'monitoramento', 'configuracao']
-    },
-    {
-        id: 3,
-        nome: 'Carlos Oliveira',
-        email: 'carlos@oftech.com',
-        senha: 'tech2024',
-        telefone: '(11) 77777-7777', 
-        cargo: 'Engenheiro de Processos',
-        permissoes: ['leitura', 'monitoramento', 'configuracao', 'admin']
-    }
-];
+// Usuários mock removidos - sistema standalone sem autenticação
 
 // Configurações simuladas do sistema
 export const configSistemaMock = {
@@ -314,37 +285,7 @@ export const apiMock = {
         });
     },
 
-    // Simular login
-    async login(email, senha) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const usuario = usuariosMock.find(u => 
-                    u.email === email && u.senha === senha
-                );
-                
-                if (usuario) {
-                    resolve({
-                        success: true,
-                        data: {
-                            id: usuario.id,
-                            nome: usuario.nome,
-                            email: usuario.email,
-                            cargo: usuario.cargo,
-                            permissoes: usuario.permissoes,
-                            token: 'mock_jwt_token_' + Date.now()
-                        },
-                        message: 'Login realizado com sucesso'
-                    });
-                } else {
-                    resolve({
-                        success: false,
-                        error: 'Email ou senha incorretos',
-                        message: 'Credenciais inválidas'
-                    });
-                }
-            }, Math.random() * 1000 + 800);
-        });
-    },
+    // Autenticação removida no modo standalone
 
     // Simular atualização de dados em tempo real
     async getDadosTempoReal(compressorId) {

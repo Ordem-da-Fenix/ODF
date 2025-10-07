@@ -1,8 +1,6 @@
 // Elementos do DOM
 const modal = document.getElementById('modal-detalhes');
-const loginModal = document.getElementById('loginModal');
 const spans = document.getElementsByClassName('close');
-const loginForm = document.getElementById('loginForm');
 const compressores = document.querySelectorAll('.compressor');
 const compressorIdElement = document.getElementById('compressor-id');
 const pressaoElement = document.getElementById('pressao');
@@ -79,7 +77,6 @@ function fecharModal() {
 Array.from(spans).forEach(span => {
     span.addEventListener('click', function() {
         fecharModal();
-        loginModal.classList.add('hidden');
     });
 });
 
@@ -87,9 +84,6 @@ Array.from(spans).forEach(span => {
 window.addEventListener('click', (event) => {
     if (event.target == modal) {
         fecharModal();
-    }
-    if (event.target == loginModal) {
-        loginModal.classList.add('hidden');
     }
 });
 
@@ -99,21 +93,11 @@ document.addEventListener('keydown', (event) => {
         if (!modal.classList.contains('hidden')) {
             fecharModal();
         }
-        if (!loginModal.classList.contains('hidden')) {
-            loginModal.classList.add('hidden');
-        }
     }
 });
 
 // Manipular envio do formulário
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(loginForm);
-    const data = Object.fromEntries(formData);
-    console.log('Dados do formulário:', data);
-    // Aqui você pode adicionar a lógica de autenticação
-    loginModal.classList.add('hidden');
-});
+// Não há formulário de login em modo standalone
 
 // Event Listeners dos compressores
 compressores.forEach(compressor => {

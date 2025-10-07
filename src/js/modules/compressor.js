@@ -12,6 +12,8 @@ export class CompressorManager {
         this.compressorIdElement = document.getElementById('compressor-id');
         this.pressaoElement = document.getElementById('pressao');
         this.temperaturaElement = document.getElementById('temperatura');
+        this.tempoFuncionamentoElement = document.getElementById('tempo-funcionamento');
+        this.temperaturaAmbienteElement = document.getElementById('temperatura-ambiente');
         this.intervaloDados = null;
         
         this.init();
@@ -83,6 +85,17 @@ export class CompressorManager {
                 if (consumoElement) {
                     consumoElement.textContent = `${consumoEnergia.toFixed(1)} kW`;
                 }
+
+                // Atualizar tempo de funcionamento e temperatura ambiente
+                this.atualizarInformacoesAdicionais(compressorId);
+
+                // Disparar evento para sistema de notificações
+                window.dispatchEvent(new CustomEvent('compressorDataUpdated', {
+                    detail: { 
+                        compressorId, 
+                        data: { pressao, temperatura, consumoEnergia }
+                    }
+                }));
             } else {
                 // Dados para compressor offline
                 this.pressaoElement.textContent = '0.0 PSI';
@@ -104,6 +117,67 @@ export class CompressorManager {
         } catch (error) {
             console.error('Erro ao buscar compressor:', error);
             return null;
+        }
+    }
+
+    atualizarInformacoesAdicionais(compressorId) {
+        // Buscar elemento do compressor para pegar dados adicionais
+        const compressorElement = document.querySelector(`[data-id="${compressorId}"]`);
+        if (compressorElement) {
+            const tempoFuncionamento = compressorElement.getAttribute('data-tempo-funcionamento');
+            const tempAmbiente = compressorElement.getAttribute('data-temp-ambiente');
+            
+            if (this.tempoFuncionamentoElement) {
+                this.tempoFuncionamentoElement.textContent = tempoFuncionamento || '--';
+            }
+            
+            if (this.temperaturaAmbienteElement) {
+                const temp = parseFloat(tempAmbiente);
+                if (!isNaN(temp)) {
+                    // Simular pequenas variações na temperatura ambiente
+                    const variacao = (Math.random() - 0.5) * 0.5; // ±0.25°C
+                    const novaTemp = temp + variacao;
+                    this.temperaturaAmbienteElement.textContent = `${novaTemp.toFixed(1)} °C`;
+                    
+                    // Atualizar o atributo no elemento também
+                    compressorElement.setAttribute('data-temp-ambiente', novaTemp.toFixed(1));
+                } else {
+                    this.temperaturaAmbienteElement.textContent = '-- °C';
+                }
+            }
+            
+            // Atualizar tempo de funcionamento se estiver online
+            if (compressorElement.getAttribute('data-status') === 'online' && tempoFuncionamento !== 'Parado') {
+                this.atualizarTempoFuncionamento(compressorElement);
+            }
+        }
+    }
+    
+    atualizarTempoFuncionamento(compressorElement) {
+        const tempoAtual = compressorElement.getAttribute('data-tempo-funcionamento');
+        if (tempoAtual && tempoAtual !== 'Parado') {
+            // Extrair horas e minutos do formato "8h 23m"
+            const match = tempoAtual.match(/(\d+)h (\d+)m/);
+            if (match) {
+                let horas = parseInt(match[1]);
+                let minutos = parseInt(match[2]);
+                
+                // Incrementar minutos aleatoriamente (simular tempo passando)
+                if (Math.random() > 0.8) { // 20% de chance de incrementar
+                    minutos++;
+                    if (minutos >= 60) {
+                        minutos = 0;
+                        horas++;
+                    }
+                    
+                    const novoTempo = `${horas}h ${minutos}m`;
+                    compressorElement.setAttribute('data-tempo-funcionamento', novoTempo);
+                    
+                    if (this.tempoFuncionamentoElement) {
+                        this.tempoFuncionamentoElement.textContent = novoTempo;
+                    }
+                }
+            }
         }
     }
 
