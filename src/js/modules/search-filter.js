@@ -97,22 +97,41 @@ export class SearchFilterManager {
     }
 
     loadCompressors() {
-        // Carregar compressores do DOM
+        // Aguardar um pouco para garantir que os compressores foram renderizados
+        setTimeout(() => {
+            this.reloadCompressorsFromDOM();
+        }, 500);
+    }
+
+    reloadCompressorsFromDOM() {
+        // Carregar compressores do DOM (agora dinamicamente criados)
         const compressorElements = document.querySelectorAll('.compressor');
-        this.compressors = Array.from(compressorElements).map(el => ({
-            element: el,
-            id: el.getAttribute('data-id'),
-            status: el.getAttribute('data-status'),
-            fabricante: el.getAttribute('data-fabricante'),
-            setor: el.getAttribute('data-setor'),
-            potencia: parseInt(el.getAttribute('data-potencia')) || 0,
-            horas: parseInt(el.getAttribute('data-horas')) || 0,
-            alertas: el.getAttribute('data-alertas') === 'true',
-            name: el.querySelector('span').textContent.toLowerCase(),
-            visible: true
-        }));
+        
+        if (compressorElements.length === 0) {
+            console.warn('Nenhum compressor encontrado no DOM');
+            return;
+        }
+        
+        this.compressors = Array.from(compressorElements).map(el => {
+            const nameElement = el.querySelector('.text-lg.font-medium');
+            const name = nameElement ? nameElement.textContent.toLowerCase() : '';
+            
+            return {
+                element: el,
+                id: el.getAttribute('data-id'),
+                status: el.getAttribute('data-status'),
+                fabricante: el.getAttribute('data-fabricante'),
+                setor: el.getAttribute('data-setor'),
+                potencia: parseInt(el.getAttribute('data-potencia')) || 0,
+                horas: parseInt(el.getAttribute('data-horas')) || 0,
+                alertas: el.getAttribute('data-alertas') === 'true',
+                name: name,
+                visible: true
+            };
+        });
 
         this.filteredCompressors = [...this.compressors];
+        console.log(`🔍 SearchFilter: ${this.compressors.length} compressores carregados`);
     }
 
     toggleAdvancedFilters() {
@@ -365,7 +384,7 @@ export class SearchFilterManager {
 
     addCompressor(compressorData) {
         // Método para adicionar novos compressores dinamicamente
-        this.loadCompressors(); // Recarregar da DOM
+        this.reloadCompressorsFromDOM(); // Recarregar da DOM
         this.applyFilters(); // Reaplicar filtros
     }
 
@@ -373,5 +392,12 @@ export class SearchFilterManager {
         // Método para remover compressores
         this.compressors = this.compressors.filter(c => c.id !== compressorId);
         this.applyFilters();
+    }
+
+    // Método para ser chamado quando a interface é atualizada
+    onCompressorsUpdated() {
+        console.log('🔄 Atualizando filtros após mudança na interface');
+        this.reloadCompressorsFromDOM();
+        this.updateResultsCount();
     }
 }

@@ -1,6 +1,5 @@
 /**
  * Módulo para gerenciar modais
- * Versão standalone com dados mock
  */
 
 export class ModalManager {

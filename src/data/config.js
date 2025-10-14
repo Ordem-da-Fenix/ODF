@@ -1,16 +1,16 @@
 /**
  * Configurações da aplicação
- * Sistema standalone - sem dependências externas
+ * Sistema focado na API
  */
 
 export const appConfig = {
-    // Sistema standalone - sem backend
-    mode: 'standalone',
     
     // Intervalos de atualização
     updateInterval: {
         realTimeData: 2000, // 2 segundos
         chartData: 5000,    // 5 segundos
+        healthCheck: 30000, // 30 segundos - verificar API
+        retry: 10000        // 10 segundos - tentar reconectar
     },
     
     // Configurações dos gráficos
@@ -19,25 +19,75 @@ export const appConfig = {
         colors: {
             primary: '#ea580c',
             secondary: '#c2410c',
-            background: 'rgba(234, 88, 12, 0.1)'
-        }
+            background: 'rgba(234, 88, 12, 0.1)',
+            pressao: '#ea580c',
+            temperatura: '#ef4444',
+            temperaturaAmbiente: '#06b6d4'
+        },
+        metrics: ['pressao', 'temperatura', 'temperaturaAmbiente']
     },
     
     // Configurações de notificações
     notifications: {
         duration: 3000, // 3 segundos
-        errorDuration: 5000 // 5 segundos
+        errorDuration: 5000, // 5 segundos
+        maxNotifications: 50,
+        enableToast: true
     },
     
-    // URLs futuras da API (quando implementar backend)
+    // Configurações da API - URLs atualizadas
     api: {
-        baseUrl: 'http://localhost:3000/api',
+        baseUrl: 'http://localhost:8000', // URL da API real
+        timeout: 5000, // 5 segundos
+        retries: 3,
         endpoints: {
-            compressores: '/compressores',
-            login: '/auth/login',
-            dadosTempoReal: '/compressores/{id}/dados',
-            historico: '/compressores/{id}/historico'
+            // Endpoints dos compressores
+            compressores: '/compressores/',
+            compressor: '/compressores/{id}',
+            
+            // Endpoints dos sensores
+            dados: '/dados',
+            dadosCompressor: '/dados/{id}',
+            sensor: '/sensor',
+            
+            // Endpoints do sistema
+            health: '/health',
+            ping: '/ping',
+            configuracoes: '/configuracoes/',
+            infoSistema: '/configuracoes/info'
         }
+    },
+    
+    // Limites e alertas (baseado na documentação da API)
+    alertas: {
+        pressao: {
+            muito_baixo: { min: 0, max: 3, color: '#3b82f6', emoji: '🔵' },
+            baixo: { min: 3, max: 6, color: '#eab308', emoji: '🟡' },
+            normal: { min: 6, max: 8, color: '#22c55e', emoji: '🟢' },
+            alto: { min: 8, max: 9, color: '#f97316', emoji: '🟠' },
+            critico: { min: 9, max: 999, color: '#ef4444', emoji: '🔴' }
+        },
+        temperatura_equipamento: {
+            muito_baixo: { min: -20, max: 20, color: '#3b82f6', emoji: '🔵' },
+            baixo: { min: 20, max: 40, color: '#eab308', emoji: '🟡' },
+            normal: { min: 40, max: 70, color: '#22c55e', emoji: '🟢' },
+            alto: { min: 70, max: 85, color: '#f97316', emoji: '🟠' },
+            critico: { min: 85, max: 999, color: '#ef4444', emoji: '🔴' }
+        },
+        temperatura_ambiente: {
+            muito_baixo: { min: -20, max: 15, color: '#3b82f6', emoji: '🔵' },
+            baixo: { min: 15, max: 20, color: '#eab308', emoji: '🟡' },
+            normal: { min: 20, max: 30, color: '#22c55e', emoji: '🟢' },
+            alto: { min: 30, max: 35, color: '#f97316', emoji: '🟠' },
+            critico: { min: 35, max: 999, color: '#ef4444', emoji: '🔴' }
+        }
+    },
+    
+    // Configurações de unidades de medida
+    units: {
+        pressao: 'bar', // API usa bar, não PSI
+        temperatura: '°C',
+        tempo: 'h'
     }
 };
 
@@ -48,8 +98,88 @@ export const appState = {
     currentUser: null,
     activeCompressor: null,
     isModalOpen: false,
+    
+    // Estado da conexão com API
+    apiStatus: {
+        isOnline: false,
+        lastCheck: null,
+        retryCount: 0,
+        mode: 'offline' // 'online', 'offline'
+    },
+    
+    // Intervalos ativos
     intervals: {
         realTimeData: null,
-        chartUpdate: null
+        chartUpdate: null,
+        healthCheck: null,
+        apiRetry: null
+    },
+    
+    // Cache de dados da API
+    cache: {
+        compressores: null,
+        configuracoes: null,
+        lastUpdate: null,
+        ttl: 60000 // 1 minuto
+    },
+    
+    // Estatísticas da sessão
+    stats: {
+        startTime: new Date(),
+        apiCalls: 0,
+        errors: 0,
+        dataUpdates: 0
+    }
+};
+
+/**
+ * Utilitários de configuração
+ */
+export const configUtils = {
+
+    /**
+     * Determina o nível de alerta baseado no valor
+     */
+    getAlertLevel(type, value) {
+        const alerts = appConfig.alertas[type];
+        if (!alerts) return 'normal';
+        
+        for (const [level, config] of Object.entries(alerts)) {
+            if (value >= config.min && value < config.max) {
+                return level;
+            }
+        }
+        return 'normal';
+    },
+    
+    /**
+     * Obtém a configuração visual do alerta
+     */
+    getAlertConfig(type, level) {
+        return appConfig.alertas[type]?.[level] || appConfig.alertas[type]?.normal;
+    },
+    
+    /**
+     * Converte ID do compressor para formato da API
+     */
+    formatCompressorId(id) {
+        return parseInt(id);
+    },
+    
+    /**
+     * Verifica se o cache ainda é válido
+     */
+    isCacheValid(timestamp) {
+        if (!timestamp) return false;
+        return (Date.now() - timestamp) < appState.cache.ttl;
+    },
+    
+    /**
+     * Atualiza estatísticas da aplicação
+     */
+    updateStats(type) {
+        if (appState.stats[type] !== undefined) {
+            appState.stats[type]++;
+        }
     }
 };

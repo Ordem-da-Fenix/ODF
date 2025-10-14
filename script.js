@@ -58,7 +58,7 @@ function gerarDadosAleatorios() {
 
 function atualizarDadosTempoReal() {
     const dados = gerarDadosAleatorios();
-    pressaoElement.textContent = `${dados.pressao} PSI`;
+    pressaoElement.textContent = `${dados.pressao} bar`;
     temperaturaElement.textContent = `${dados.temperatura} °C`;
 }
 
@@ -139,3 +139,36 @@ setInterval(() => {
         chart.update();
     }
 }, 5000);
+
+// ======================================
+// STATUS DA API
+// ======================================
+
+/**
+ * Atualiza o indicador de status da API
+ */
+function updateStatusIndicator() {
+    const apiStatusIndicator = document.getElementById('api-status-indicator');
+    const apiStatusText = document.getElementById('api-status-text');
+    
+    if (!apiStatusIndicator || !apiStatusText) return;
+    
+    const status = appState.apiStatus;
+    
+    switch (status.mode) {
+        case 'online':
+            apiStatusIndicator.className = 'w-3 h-3 rounded-full bg-green-400';
+            apiStatusText.textContent = 'API Online';
+            break;
+        case 'offline':
+            apiStatusIndicator.className = 'w-3 h-3 rounded-full bg-red-400';
+            apiStatusText.textContent = 'API Offline';
+            break;
+        default:
+            apiStatusIndicator.className = 'w-3 h-3 rounded-full bg-gray-400';
+            apiStatusText.textContent = 'Conectando...';
+    }
+}
+
+// Atualizar status da API periodicamente
+setInterval(updateStatusIndicator, 5000);

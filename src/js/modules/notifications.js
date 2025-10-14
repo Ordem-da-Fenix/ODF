@@ -370,7 +370,7 @@ export class NotificationManager {
                 title: 'Pressão Crítica!',
                 message: 'Pressão excedeu o limite crítico. Intervenção imediata necessária.',
                 compressorId,
-                value: `${pressao.toFixed(1)} PSI`
+                value: `${pressao.toFixed(1)} bar`
             });
         } else if (pressao > limits.pressao.max) {
             this.addNotification({
@@ -378,7 +378,7 @@ export class NotificationManager {
                 title: 'Pressão Elevada',
                 message: 'Pressão acima do normal. Monitore com atenção.',
                 compressorId,
-                value: `${pressao.toFixed(1)} PSI`
+                value: `${pressao.toFixed(1)} bar`
             });
         }
 

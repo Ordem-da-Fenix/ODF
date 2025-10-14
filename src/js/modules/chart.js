@@ -1,97 +1,41 @@
 /**
  * Módulo para gerenciar gráficos com Chart.js
+ * Versão focada na API
  */
+
+import { apiService } from '../../data/api.js';
+import { appConfig, appState } from '../../data/config.js';
 
 export class ChartManager {
     constructor() {
         this.chart = null;
         this.ctx = document.getElementById('graficoEnergia').getContext('2d');
-        this.metric = 'consumo'; // default: consumo
-        this.dados = this._buildDataForMetric(this.metric);
-        
+        this.metric = 'pressao'; // default: pressao (primeiro dado da API)
+        this.compressorId = null;
+        this.dados = null;
         this.intervalGrafico = null;
+        this.useApi = false;
+        this.lastDataUpdate = null;
     }
 
-    inicializarGrafico() {
+    async inicializarGrafico() {
+        // Verificar se API está disponível
+        this.useApi = appState.apiStatus.isOnline;
+        
+        // Construir dados iniciais
+        await this.buildInitialData();
+        
         if (this.chart) {
             this.chart.destroy();
         }
 
+        // Criar configuração dinâmica baseada na métrica atual
+        const config = this.buildChartConfig();
+
         this.chart = new Chart(this.ctx, {
             type: 'line',
             data: this.dados,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            color: '#374151',
-                            font: {
-                                size: 12,
-                                weight: '500'
-                            }
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Consumo de Energia - Últimas 24 Horas',
-                        color: '#374151',
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Consumo de Energia (kWh)',
-                            color: '#6b7280',
-                            font: {
-                                size: 12,
-                                weight: '500'
-                            }
-                        },
-                        grid: {
-                            color: '#e5e7eb'
-                        },
-                        ticks: {
-                            color: '#6b7280'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Hora do Dia',
-                            color: '#6b7280',
-                            font: {
-                                size: 12,
-                                weight: '500'
-                            }
-                        },
-                        grid: {
-                            color: '#e5e7eb'
-                        },
-                        ticks: {
-                            color: '#6b7280'
-                        }
-                    }
-                },
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
-                elements: {
-                    point: {
-                        hoverRadius: 8
-                    }
-                }
-            }
+            options: config
         });
 
         // Iniciar atualização automática do gráfico
@@ -99,51 +43,275 @@ export class ChartManager {
     }
 
     /**
-     * Muda a métrica exibida no gráfico (pressao | temperatura | consumo)
+     * Constrói configuração do gráfico baseada na métrica atual
      */
-    setMetric(metric) {
+    buildChartConfig() {
+        const metricConfig = this.getMetricConfig(this.metric);
+        
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#374151',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: metricConfig.title,
+                    color: '#374151',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: metricConfig.yAxisLabel,
+                        color: '#6b7280',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    },
+                    grid: {
+                        color: '#e5e7eb'
+                    },
+                    ticks: {
+                        color: '#6b7280',
+                        callback: function(value) {
+                            return value.toFixed(1) + ' ' + metricConfig.unit;
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Tempo',
+                        color: '#6b7280',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    },
+                    grid: {
+                        color: '#e5e7eb'
+                    },
+                    ticks: {
+                        color: '#6b7280'
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                point: {
+                    hoverRadius: 8,
+                    radius: 2
+                }
+            }
+        };
+    }
+
+    /**
+     * Obtém configuração específica para cada métrica
+     */
+    getMetricConfig(metric) {
+        const configs = {
+            pressao: {
+                title: `Pressão - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: `Pressão (bar)`, // Sempre usar bar
+                unit: 'bar',
+                color: appConfig.chart.colors.pressao,
+                field: 'pressao'
+            },
+            temperatura: {
+                title: `Temperatura Equipamento - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: 'Temperatura (°C)',
+                unit: '°C',
+                color: appConfig.chart.colors.temperatura,
+                field: 'temp_equipamento'
+            },
+            temperaturaAmbiente: {
+                title: `Temperatura Ambiente - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: 'Temperatura (°C)',
+                unit: '°C',
+                color: appConfig.chart.colors.temperaturaAmbiente,
+                field: 'temp_ambiente'
+            },
+            consumo: {
+                title: `Consumo Estimado - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: 'Consumo (kWh)',
+                unit: 'kWh',
+                color: appConfig.chart.colors.primary,
+                field: 'consumo_estimado'
+            }
+        };
+
+        return configs[metric] || configs.pressao;
+    }
+
+    /**
+     * Muda a métrica exibida no gráfico
+     */
+    async setMetric(metric) {
         this.metric = metric;
-        this.dados = this._buildDataForMetric(metric);
+        await this.buildDataForMetric(metric);
+        
         if (this.chart) {
+            // Atualizar dados e configuração
             this.chart.data = this.dados;
-            this.chart.update();
+            this.chart.options = this.buildChartConfig();
+            this.chart.update('active');
         }
     }
 
-    _buildDataForMetric(metric) {
-        const labels = Array.from({length: 24}, (_, i) => `${i}h`);
-        let dataset = {};
+    /**
+     * Define o compressor ativo para o gráfico
+     */
+    setCompressor(compressorId) {
+        this.compressorId = parseInt(compressorId);
+        console.log(`📊 ChartManager: Compressor ${this.compressorId} selecionado`);
+    }
 
-        if (metric === 'pressao') {
-            dataset = {
-                label: 'Pressão (PSI)',
-                data: Array.from({length: 24}, () => Math.random() * 30 + 70),
-                borderColor: '#ea580c',
-                backgroundColor: 'rgba(234,88,12,0.06)',
-                tension: 0.3,
-                fill: true
-            };
-        } else if (metric === 'temperatura') {
-            dataset = {
-                label: 'Temperatura (°C)',
-                data: Array.from({length: 24}, () => Math.random() * 15 + 20),
-                borderColor: '#ef4444',
-                backgroundColor: 'rgba(239,68,68,0.06)',
-                tension: 0.3,
-                fill: true
-            };
-        } else { // consumo
-            dataset = {
-                label: 'Consumo de Energia (kWh)',
-                data: Array.from({length: 24}, () => Math.random() * 60 + 20),
-                borderColor: '#ea580c',
-                backgroundColor: 'rgba(234,88,12,0.06)',
-                tension: 0.3,
-                fill: true
-            };
+    /**
+     * Constrói dados iniciais do gráfico
+     */
+    async buildInitialData() {
+        await this.buildDataForMetric(this.metric);
+    }
+
+    /**
+     * Constrói dados para uma métrica específica
+     */
+    async buildDataForMetric(metric) {
+        try {
+            if (this.useApi && this.compressorId) {
+                const response = await apiService.getDadosTempoReal(this.compressorId, appConfig.chart.dataPoints);
+                if (response.dados && response.dados.length > 0) {
+                    const dadosHistoricos = response.dados.reverse(); // API retorna mais recente primeiro
+                    console.log(`📊 Carregados ${dadosHistoricos.length} pontos de dados da API`);
+                    
+                    this.dados = this.processDataForChart(dadosHistoricos, metric);
+                    this.lastDataUpdate = Date.now();
+                } else {
+                    this.dados = this.generateEmptyChart(metric);
+                }
+            } else {
+                this.dados = this.generateEmptyChart(metric);
+            }
+
+        } catch (error) {
+            console.error('Erro ao construir dados do gráfico:', error);
+            this.dados = this.generateEmptyChart(metric);
+        }
+    }
+
+    /**
+     * Processa dados para formato do Chart.js
+     */
+    processDataForChart(dadosHistoricos, metric) {
+        const metricConfig = this.getMetricConfig(metric);
+        const labels = [];
+        const data = [];
+
+        dadosHistoricos.forEach((item, index) => {
+            if (this.useApi) {
+                // Dados da API
+                const timestamp = new Date(item.data_medicao);
+                labels.push(timestamp.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }));
+
+                let value = 0;
+                switch (metric) {
+                    case 'pressao':
+                        value = item.pressao || 0;
+                        break;
+                    case 'temperatura':
+                        value = item.temp_equipamento || 0;
+                        break;
+                    case 'temperaturaAmbiente':
+                        value = item.temp_ambiente || 0;
+                        break;
+                    case 'consumo':
+                        // Estimar consumo baseado em pressão e temperatura
+                        value = (item.pressao * 2.5) + (item.temp_equipamento * 0.3);
+                        break;
+                }
+                data.push(value);
+            } else {
+                // Dados mock
+                labels.push(`${index}h`);
+                data.push(item.value || Math.random() * 50 + 25);
+            }
+        });
+
+        // Preencher dados faltantes se necessário
+        while (labels.length < appConfig.chart.dataPoints) {
+            if (this.useApi) {
+                const now = new Date();
+                now.setHours(now.getHours() - (appConfig.chart.dataPoints - labels.length));
+                labels.unshift(now.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }));
+            } else {
+                labels.unshift(`${appConfig.chart.dataPoints - labels.length}h`);
+            }
+            data.unshift(0);
         }
 
-        return { labels, datasets: [dataset] };
+        return {
+            labels,
+            datasets: [{
+                label: metricConfig.title.split(' - ')[0],
+                data,
+                borderColor: metricConfig.color,
+                backgroundColor: metricConfig.color + '20', // 20% opacity
+                tension: 0.3,
+                fill: true,
+                pointRadius: 2,
+                pointHoverRadius: 6
+            }]
+        };
+    }
+
+
+
+    /**
+     * Gera gráfico vazio em caso de erro
+     */
+    generateEmptyChart(metric) {
+        const metricConfig = this.getMetricConfig(metric);
+        const labels = Array.from({length: appConfig.chart.dataPoints}, (_, i) => `${i}h`);
+        const data = Array.from({length: appConfig.chart.dataPoints}, () => 0);
+
+        return {
+            labels,
+            datasets: [{
+                label: 'Sem dados',
+                data,
+                borderColor: '#9ca3af',
+                backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                tension: 0.3,
+                fill: true
+            }]
+        };
     }
 
     iniciarAtualizacaoAutomatica() {
@@ -152,26 +320,77 @@ export class ChartManager {
             clearInterval(this.intervalGrafico);
         }
 
-        // Atualizar dados do gráfico a cada 5 segundos
+        // Atualizar dados do gráfico baseado na configuração
         this.intervalGrafico = setInterval(() => {
             if (this.chart) {
                 this.atualizarDadosGrafico();
             }
-        }, 5000);
+        }, appConfig.updateInterval.chartData);
     }
 
-    atualizarDadosGrafico() {
-        // Remover o primeiro ponto e adicionar um novo
-        this.dadosEnergia.datasets[0].data.shift();
-        this.dadosEnergia.datasets[0].data.push(Math.random() * 100);
-        
-        // Atualizar labels para refletir o tempo atual
-        const horaAtual = new Date().getHours();
-        this.dadosEnergia.labels.shift();
-        this.dadosEnergia.labels.push(`${horaAtual}h`);
-        
-        this.chart.update('none'); // Animação mais suave
+    async atualizarDadosGrafico() {
+        try {
+            if (!this.compressorId) {
+                console.log('📊 Nenhum compressor selecionado para atualizar gráfico');
+                return;
+            }
+
+            let novoValor = null;
+            
+            if (this.useApi) {
+                // Buscar dados mais recentes da API
+                try {
+                    const response = await apiService.getDadosTempoReal(this.compressorId, 1);
+                    if (response.dados && response.dados.length > 0) {
+                        const ultimoDado = response.dados[0];
+                        
+                        switch (this.metric) {
+                            case 'pressao':
+                                novoValor = ultimoDado.pressao || 0;
+                                break;
+                            case 'temperatura':
+                                novoValor = ultimoDado.temp_equipamento || 0;
+                                break;
+                            case 'temperaturaAmbiente':
+                                novoValor = ultimoDado.temp_ambiente || 0;
+                                break;
+                            case 'consumo':
+                                novoValor = (ultimoDado.pressao * 2.5) + (ultimoDado.temp_equipamento * 0.3);
+                                break;
+                        }
+                    }
+                } catch (apiError) {
+                    console.warn('Erro na atualização do gráfico via API:', apiError.message);
+                    return; // Para de tentar atualizar se API falhou
+                }
+            }
+
+            // Atualizar o gráfico
+            if (this.chart && this.chart.data && this.chart.data.datasets[0]) {
+                const dataset = this.chart.data.datasets[0];
+                
+                // Remover o primeiro ponto e adicionar o novo
+                dataset.data.shift();
+                dataset.data.push(novoValor);
+                
+                // Atualizar label do tempo
+                const agora = new Date();
+                this.chart.data.labels.shift();
+                this.chart.data.labels.push(agora.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }));
+                
+                // Atualizar gráfico com animação suave
+                this.chart.update('none');
+            }
+
+        } catch (error) {
+            console.error('Erro ao atualizar dados do gráfico:', error);
+        }
     }
+
+
 
     pararAtualizacao() {
         if (this.intervalGrafico) {
@@ -186,5 +405,110 @@ export class ChartManager {
             this.chart.destroy();
             this.chart = null;
         }
+        this.compressorId = null;
+        this.lastDataUpdate = null;
+    }
+
+    /**
+     * Força recarga dos dados do gráfico
+     */
+    async recarregarDados() {
+        console.log('🔄 Recarregando dados do gráfico...');
+        await this.buildDataForMetric(this.metric);
+        
+        if (this.chart) {
+            this.chart.data = this.dados;
+            this.chart.update('active');
+        }
+    }
+
+    /**
+     * Alterna entre modo API e mock
+     */
+    async alternarModo() {
+        this.useApi = !this.useApi;
+        console.log(`📊 ChartManager: Alternado para modo ${this.useApi ? 'API' : 'mock'}`);
+        await this.recarregarDados();
+        return this.useApi;
+    }
+
+    /**
+     * Obtém estatísticas do gráfico
+     */
+    getStats() {
+        return {
+            metric: this.metric,
+            compressorId: this.compressorId,
+            useApi: this.useApi,
+            lastDataUpdate: this.lastDataUpdate,
+            hasChart: !!this.chart,
+            dataPoints: this.chart?.data?.datasets?.[0]?.data?.length || 0
+        };
+    }
+
+    /**
+     * Exporta dados do gráfico atual
+     */
+    exportarDados() {
+        if (!this.chart || !this.chart.data) {
+            console.warn('Nenhum dado disponível para exportar');
+            return null;
+        }
+
+        const dados = {
+            metrica: this.metric,
+            compressor: this.compressorId,
+            timestamp: new Date().toISOString(),
+            labels: [...this.chart.data.labels],
+            valores: [...this.chart.data.datasets[0].data],
+            fonte: this.useApi ? 'API' : 'mock'
+        };
+
+        // Criar e baixar arquivo CSV
+        const csv = this.converterParaCSV(dados);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `grafico_${this.metric}_${this.compressorId}_${Date.now()}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        return dados;
+    }
+
+    /**
+     * Converte dados para formato CSV
+     */
+    converterParaCSV(dados) {
+        const headers = ['Tempo', 'Valor', 'Métrica', 'Compressor', 'Fonte'];
+        const rows = dados.labels.map((label, index) => [
+            label,
+            dados.valores[index],
+            dados.metrica,
+            dados.compressor,
+            dados.fonte
+        ]);
+
+        return [headers, ...rows]
+            .map(row => row.map(field => `"${field}"`).join(','))
+            .join('\n');
+    }
+
+    // Getters para uso externo
+    get currentMetric() {
+        return this.metric;
+    }
+
+    get isUsingApi() {
+        return this.useApi;
+    }
+
+    get activeCompressor() {
+        return this.compressorId;
     }
 }

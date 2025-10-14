@@ -1,120 +1,232 @@
 # OFtech - Sistema de Monitoramento de Compressores
 
 ## 📋 Descrição
-Sistema web para monitoramento em tempo real de compressores industriais, desenvolvido para a OFtech.
+Sistema web avançado para monitoramento em tempo real de compressores industriais, desenvolvido para a OFtech com integração completa de API e interface dinâmica.
 
-## 🚀 Funcionalidades
-- ✅ Monitoramento em tempo real de pressão e temperatura
-- ✅ Gráficos dinâmicos de consumo de energia
-- ✅ Interface responsiva com Tailwind CSS
-- ✅ Sistema de autenticação
-- ✅ Modais centralizados para detalhes dos equipamentos
-- ✅ Arquitetura modular em JavaScript
+## 🚀 Funcionalidades Principais
+- ✅ **Integração completa com API REST** - Dados reais em tempo real
+- ✅ **Sistema híbrido** - Fallback automático para dados mock
+- ✅ **Monitoramento avançado** - Pressão, temperatura, eficiência e consumo
+- ✅ **Interface dinâmica** - Cards gerados automaticamente da API
+- ✅ **Filtros inteligentes** - Pesquisa e filtragem por múltiplos critérios
+- ✅ **Gráficos em tempo real** - Histórico e dados atuais com Chart.js
+- ✅ **Sistema de alertas** - Notificações de status e problemas
+- ✅ **Modais interativos** - Detalhes completos dos equipamentos
+- ✅ **Design responsivo** - Interface adaptável com Tailwind CSS
+- ✅ **Health monitoring** - Verificação automática de conectividade
 
 ## 📁 Estrutura do Projeto
 ```
 ODF/
-├── index.html              # Página principal
+├── index.html                    # Página principal
+├── LICENSE                       # Licença do projeto
+├── API_DOCUMENTATION.md          # Documentação da API
 ├── src/
 │   ├── js/
-│   │   ├── app.js          # Arquivo principal da aplicação
+│   │   ├── app.js                # Orquestrador principal
 │   │   └── modules/
-│   │       ├── compressor.js  # Gerenciamento de compressores
-│   │       ├── chart.js       # Gráficos com Chart.js
-│   │       ├── modal.js       # Sistema de modais
-│   │       └── utils.js       # Utilitários gerais
-│   ├── css/                # Estilos customizados
+│   │       ├── compressor.js           # Gerenciamento de modais
+│   │       ├── compressor-interface.js # Interface dinâmica com API
+│   │       ├── chart.js               # Gráficos em tempo real
+│   │       ├── modal.js               # Sistema de modais
+│   │       ├── notifications.js       # Sistema de notificações
+│   │       ├── search-filter.js       # Sistema de filtros avançados
+│   │       └── utils.js               # Utilitários gerais
+│   ├── css/                      # Estilos customizados
 │   └── data/
-│       └── config.js       # Configurações e dados
+│       ├── api.js                # Serviços de API REST
+│       ├── config.js             # Configurações e estado da app
+│       └── [removido mocks.js]   # Sistema focado na API
 ├── assets/
-│   └── images/             # Imagens e recursos
-├── docs/                   # Documentação
-└── README.md               # Este arquivo
+│   └── images/                   # Imagens e recursos
+├── docs/
+│   └── TECHNICAL.md              # Documentação técnica
+└── README.md                     # Este arquivo
 ```
 
 ## 🛠️ Tecnologias Utilizadas
-- **Frontend**: HTML5, JavaScript ES6+, Tailwind CSS
-- **Gráficos**: Chart.js
-- **Arquitetura**: Modular com ES6 Modules
+- **Frontend**: HTML5, JavaScript ES6+ Modules, Tailwind CSS
+- **API**: REST API com fallback para dados mock
+- **Gráficos**: Chart.js para visualizações em tempo real
+- **Arquitetura**: Modular híbrida com gerenciamento de estado
+- **Responsividade**: Mobile-first design
+- **Comunicação**: Fetch API com error handling avançado
 
 ## 🔧 Instalação e Uso
 
 ### Requisitos
 - Navegador moderno com suporte a ES6+ Modules
 - Servidor web local (recomendado para evitar CORS)
+- **API Backend** (opcional): `localhost:8000` para dados reais
 
-### Executar Localmente
-1. Clone ou baixe o projeto
-2. Abra um servidor local na pasta do projeto:
-   ```bash
-   # Python 3
-   python -m http.server 8080
-   
-   # PHP
-   php -S localhost:8080
-   
-   # Node.js (se disponível)
-   npx live-server --port=8080
-   ```
-3. Acesse `http://localhost:8080` no navegador
+### Configuração Completa
 
-### Sistema Standalone
-- ✅ **Sem dependências**: Funciona apenas com navegador
-- ✅ **Dados mock**: Simulação completa de API
-- ✅ **Pronto para produção**: Facilmente adaptável para backend real
+#### 1. Frontend (Obrigatório)
+```bash
+# Clone o repositório
+git clone <repository-url> ODF
+cd ODF
 
-## 📊 Módulos
-
-### CompressorManager
-- Gerencia a lista de compressores
-- Controla abertura/fechamento de modais
-- Atualiza dados em tempo real via API mock
-- Simula diferentes status de equipamentos
-
-### ChartManager  
-- Inicializa e controla gráficos Chart.js
-- Atualização automática de dados
-- Configurações visuais personalizadas
-- Dados históricos simulados
-
-### ModalManager
-- Sistema de modais centralizados
-- Validação de formulários com API mock
-- Sistema de login funcional
-- Notificações de sucesso/erro
-
-### Utils
-- Funções utilitárias reutilizáveis
-- Validações de dados
-- Manipulação de localStorage
-- Helpers para mock de dados
-
-## 💾 Sistema de Dados Mock
-
-### Usuários de Teste
-```javascript
-// Email: joao.silva@oftech.com | Senha: 123456
-// Email: maria.santos@oftech.com | Senha: admin123  
-// Email: carlos@oftech.com | Senha: tech2024
+# Inicie servidor local
+python -m http.server 8080
+# OU
+php -S localhost:8080
+# OU
+npx live-server --port=8080
 ```
 
-### Compressores Simulados
-- **5 compressores** com diferentes status
-- **Dados em tempo real** simulados
-- **Histórico de energia** com 24h de dados
-- **Alertas e notificações** realistas
+#### 2. Backend API (Opcional)
+```bash
+# Se você tiver a API rodando em localhost:8000
+# O sistema detecta automaticamente e usa dados reais
+# Caso contrário, usa dados mock seamlessly
+```
 
-## 🎨 Personalização
+#### 3. Acesso
+- Abra `http://localhost:8080` no navegador
+- Sistema verifica API automaticamente
+- Interface se adapta aos dados disponíveis
 
-### Cores da Marca
-- **Laranja Principal**: `#ea580c`
-- **Laranja Escuro**: `#c2410c`
-- Configurável em `src/data/config.js`
+### Modos de Operação
 
-### Intervalos de Atualização
-- **Dados em Tempo Real**: 2 segundos
-- **Gráficos**: 5 segundos
-- Configurável em `appConfig`
+#### 🟢 Modo API (Recomendado)
+- **URL da API**: `http://localhost:8000`
+- **Dados**: Tempo real da sua base de dados
+- **Status**: Indicador verde "API Conectada"
+- **Funcionalidades**: 100% das features ativas
+
+#### 🟡 Modo Híbrido (Automático)
+- **Detecção**: Health check a cada 30s
+- **Reconexão**: Automática quando API volta
+- **Transição**: Seamless entre modos
+
+#### 🔴 Modo Mock (Fallback)
+- **Dados**: Simulação realística completa
+- **Status**: Indicador vermelho "Modo Offline"
+- **Funcionalidades**: Todas disponíveis com dados simulados
+
+## 📊 Arquitetura de Módulos
+
+### 🏗️ Core Application (`app.js`)
+- **Orquestração**: Inicialização e coordenação de módulos
+- **Health Monitor**: Verificação automática de conectividade da API
+- **State Management**: Gerenciamento centralizado de estado
+- **Auto-Reconnection**: Reconexão automática com API
+
+### 🖥️ CompressorInterfaceManager (`compressor-interface.js`)
+- **Renderização Dinâmica**: Cards gerados automaticamente da API
+- **Data Extraction**: Algoritmos inteligentes para extrair dados
+- **Real-time Updates**: Atualização automática de status
+- **API Integration**: Integração completa com endpoints REST
+
+### 🔍 SearchFilterManager (`search-filter.js`)
+- **Filtros Avançados**: Por status, fabricante, setor, potência
+- **Pesquisa Inteligente**: Busca em tempo real
+- **Export Functions**: Exportação de resultados filtrados
+- **Dynamic Filtering**: Funciona com elementos criados dinamicamente
+
+### 🎛️ CompressorManager (`compressor.js`)
+- **Modal Control**: Gerenciamento de modais com event delegation
+- **Real-time Data**: Atualização de dados em tempo real
+- **Status Management**: Controle de estados dos compressores
+- **API Synchronization**: Sincronização com dados da API
+
+### 📈 ChartManager (`chart.js`)  
+- **Real-time Charts**: Gráficos atualizados automaticamente
+- **Historical Data**: Visualização de dados históricos
+- **Multiple Chart Types**: Linha, barra, pizza
+- **API Data Integration**: Dados diretos da API ou mock
+
+### 🚨 NotificationsManager (`notifications.js`)
+- **Alert System**: Sistema completo de notificações
+- **Toast Messages**: Mensagens temporárias elegantes
+- **Status Indicators**: Indicadores visuais de estado
+- **API Status**: Notificações de conectividade
+
+### 🌐 ApiService (`api.js`)
+- **REST Client**: Cliente completo para API REST
+- **Error Handling**: Tratamento robusto de erros
+- **Timeout Management**: Gestão de timeouts
+- **Health Checks**: Verificações de saúde da API
+
+### ⚙️ ConfigManager (`config.js`)
+- **App Configuration**: Configurações centralizadas
+- **State Management**: Estado global da aplicação
+- **API Settings**: Configurações de API e timeouts
+- **Feature Flags**: Controle de funcionalidades
+
+## � Integração de API
+
+### Endpoints Principais
+```javascript
+GET /compressores/          // Lista todos os compressores
+GET /dados/{id}            // Dados específicos de um compressor  
+GET /sensor                // Dados dos sensores
+GET /health               // Health check da API
+```
+
+### Estrutura de Dados da API
+```json
+{
+  "id_compressor": "COMP001",
+  "nome_marca": "Atlas Copco GA22", 
+  "esta_ligado": true,
+  "localizacao": "Setor A - Linha de Produção 1",
+  "data_cadastro": "2024-01-15T10:30:00Z",
+  "pressao": 7.2,
+  "temperatura": 78.5,
+  "eficiencia": 87.3
+}
+```
+
+### 💾 Sistema de Fallback (Mock Data)
+
+#### Sistema Standalone (Sem Autenticação)
+- **Modo híbrido**: Tenta API primeiro, fallback para mock
+- **Sem login**: Sistema funciona diretamente sem autenticação
+- **Dados consistentes**: Mock segue estrutura da API documentada
+
+#### Compressores Simulados
+- **5 compressores** com diferentes status e fabricantes (Atlas Copco, Schulz, Kaeser, Chicago Pneumatic, Ingersoll Rand)
+- **Dados compatíveis com API**: Campos `pressao` (bar), `temp_equipamento`, `temp_ambiente`, `potencia_kw`
+- **Sistema de alertas**: 4 parâmetros com 5 níveis (muito_baixo, baixo, normal, alto, critico)
+- **Histórico completo** de energia e operação (24h)
+- **Geolocalização** por setores (A, B, C, D, E)
+
+## �️ Configurações e Personalização
+
+### 🎨 Identidade Visual
+```javascript
+// Cores da marca OFtech
+primaryColor: '#ea580c',      // Laranja principal
+primaryDark: '#c2410c',       // Laranja escuro  
+success: '#10b981',           // Verde para status online
+error: '#ef4444',             // Vermelho para alertas
+warning: '#f59e0b'            // Amarelo para avisos
+```
+
+### ⏱️ Intervalos de Atualização
+```javascript
+realTimeData: 2000,          // Dados em tempo real (2s)
+charts: 5000,                 // Gráficos (5s)
+healthCheck: 30000,           // Verificação de API (30s)
+statusUpdate: 6000            // Atualização de status (6s)
+```
+
+### 🔧 Configurações de API
+```javascript
+apiBaseUrl: 'http://localhost:8000',
+timeout: 5000,                // Timeout de requisições
+maxRetries: 3,                // Tentativas de reconexão
+retryDelay: 2000              // Delay entre tentativas
+```
+
+### 🎯 Filtros Disponíveis
+- **Status**: Online, Offline
+- **Fabricante**: Atlas Copco, Schulz, Kaeser, Chicago Pneumatic
+- **Setor**: A, B, C, D, etc.
+- **Potência**: Filtro por kW mínimo
+- **Alertas**: Com ou sem alertas ativos
 
 ## 📱 Responsividade
 - Design mobile-first
@@ -126,42 +238,170 @@ ODF/
 - Validação client-side
 - Prevenção XSS básica
 
-## 🚧 Roadmap
+## ✅ Status do Projeto
 
-### Próxima Fase (Backend Integration)
-- [ ] **API REST** - Substituir mocks por endpoints reais
-- [ ] **Banco de dados** - Armazenamento persistente
-- [ ] **Autenticação JWT** - Sistema de tokens
-- [ ] **WebSocket** - Dados em tempo real
-- [ ] **Dashboard admin** - Configurações avançadas
+### 🎉 Funcionalidades Implementadas
+- [x] **API REST Integration** - Integração completa com backend
+- [x] **Sistema Híbrido** - Fallback automático para mock
+- [x] **Interface Dinâmica** - Renderização automática da API  
+- [x] **Filtros Avançados** - Sistema completo de filtragem
+- [x] **Health Monitoring** - Monitoramento de conectividade
+- [x] **Real-time Updates** - Atualizações automáticas
+- [x] **Event Delegation** - Eventos funcionam com conteúdo dinâmico
+- [x] **Error Handling** - Tratamento robusto de erros
+- [x] **Responsive Design** - Interface adaptável
+- [x] **Data Extraction** - Algoritmos inteligentes de extração
 
-### Melhorias Futuras
-- [ ] **PWA** - Aplicativo instalável
-- [ ] **Relatórios PDF** - Exportação de dados
-- [ ] **Notificações Push** - Alertas em tempo real
-- [ ] **App Mobile** - React Native / Flutter
-- [ ] **Testes automatizados** - Jest + Cypress
+### 🚧 Próximas Melhorias
 
-## 🔄 Migração para Backend
+#### Fase 1 - Enhancement (Curto Prazo)
+- [ ] **WebSocket Integration** - Dados em tempo real via WS
+- [ ] **Caching Strategy** - Cache inteligente de dados
+- [ ] **Offline Mode** - Funcionamento sem conectividade
+- [ ] **Advanced Charts** - Mais tipos de visualização
+- [ ] **Export Features** - PDF e Excel reports
 
-O sistema está preparado para migração fácil:
+#### Fase 2 - Advanced Features (Médio Prazo)  
+- [ ] **PWA Support** - Aplicativo instalável
+- [ ] **Push Notifications** - Alertas em tempo real
+- [ ] **Multi-language** - Suporte a idiomas
+- [ ] **Dark/Light Theme** - Temas personalizáveis
+- [ ] **Advanced Analytics** - Dashboard de análises
 
-```javascript
-// Trocar import dos mocks
-import { apiMock } from './mocks.js';
-// Para API real
-import { apiService } from './api.js';
+#### Fase 3 - Enterprise (Longo Prazo)
+- [ ] **Multi-tenant** - Suporte a múltiplas empresas
+- [ ] **Mobile App** - React Native / Flutter
+- [ ] **AI Integration** - Predição de falhas
+- [ ] **IoT Integration** - Integração com sensores IoT
+- [ ] **Automated Testing** - Jest + Cypress + E2E
 
-// URLs já configuradas em config.js
-const API_BASE = 'http://localhost:3000/api';
+## � Deployment e Produção
+
+### 🏭 Ambiente de Produção
+
+#### Frontend Deploy
+```bash
+# Build otimizado (se usando bundler)
+npm run build
+
+# Deploy estático (Nginx, Apache, Vercel, Netlify)
+# Apenas servir os arquivos estáticos
 ```
 
-## 👨‍💻 Desenvolvimento
-Desenvolvido para OFtech com foco em:
-- Performance
-- Manutenibilidade  
-- Escalabilidade
-- Experiência do usuário
+#### Configuração de API
+```javascript
+// config.js - Ambiente de produção
+const prodConfig = {
+  apiBaseUrl: 'https://api.oftech.com.br',
+  environment: 'production',
+  debug: false,
+  timeout: 10000
+};
+```
+
+### 🔧 Configuração do Servidor Web
+
+#### Nginx
+```nginx
+server {
+    listen 80;
+    server_name oftech.com.br;
+    root /var/www/oftech;
+    
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    location /api/ {
+        proxy_pass http://localhost:8000;
+    }
+}
+```
+
+#### Apache
+```apache
+<VirtualHost *:80>
+    ServerName oftech.com.br
+    DocumentRoot /var/www/oftech
+    
+    ProxyPass /api/ http://localhost:8000/
+    ProxyPassReverse /api/ http://localhost:8000/
+</VirtualHost>
+```
+
+### 📊 Monitoramento
+- **Health Checks**: Endpoint `/health` para monitoring
+- **Error Tracking**: Logs estruturados de erros
+- **Performance**: Métricas de carregamento e API
+- **Uptime**: Monitoramento de disponibilidade
+
+## � Desenvolvimento Local
+
+### Setup do Ambiente
+```bash
+# Clone do projeto
+git clone <repository-url> ODF
+cd ODF
+
+# Instalar dependências (se usar package.json futuramente)
+npm install
+
+# Iniciar desenvolvimento
+python -m http.server 8080
+```
+
+### 🧪 Testing
+```bash
+# Testes unitários (futuro)
+npm test
+
+# Testes E2E (futuro)  
+npm run e2e
+
+# Linting (futuro)
+npm run lint
+```
+
+### 🏗️ Contribuição
+1. Fork do projeto
+2. Criar branch para feature (`git checkout -b feature/nova-funcionalidade`)
+3. Commit das mudanças (`git commit -m 'Add nova funcionalidade'`)
+4. Push para branch (`git push origin feature/nova-funcionalidade`)
+5. Abrir Pull Request
+
+### 📋 Code Standards
+- **JavaScript**: ES6+ Modules, async/await
+- **HTML**: Semantic HTML5, acessibilidade
+- **CSS**: Tailwind CSS, mobile-first
+- **Commits**: Conventional Commits format
+
+## 👥 Equipe
+
+### Desenvolvedor Principal
+- **Frontend**: Sistema modular com JavaScript vanilla
+- **Integração**: API REST com fallback inteligente  
+- **UX/UI**: Design system consistente com Tailwind
+
+### Foco de Desenvolvimento
+- ⚡ **Performance**: Carregamento otimizado e atualizações eficientes
+- 🔧 **Manutenibilidade**: Código modular e bem documentado
+- 📈 **Escalabilidade**: Arquitetura preparada para crescimento
+- 🎯 **UX**: Experiência fluida e intuitiva
+- 🔒 **Confiabilidade**: Error handling robusto e fallbacks
+
+## 📞 Suporte
+
+### Documentação
+- **README.md** - Guia principal (este arquivo)
+- **API_DOCUMENTATION.md** - Documentação da API
+- **docs/TECHNICAL.md** - Detalhes técnicos
+- **Código comentado** - Comentários inline explicativos
+
+### Contato
+- **Issues**: Use o sistema de issues do GitHub
+- **Email**: suporte@oftech.com.br
+- **Documentação**: Consulte os arquivos de docs/
 
 ## 📄 Licença
-Projeto proprietário da OFtech.
+© 2025 OFtech - Sistema de Monitoramento de Compressores  
+Projeto proprietário da OFtech. Todos os direitos reservados.
