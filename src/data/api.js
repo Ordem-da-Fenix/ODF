@@ -1,11 +1,11 @@
 /**
  * Serviço de API para integração com backend
- * Base URL: http://localhost:8000
+ * Base URL: https://ordem-da-fenix-api.fly.dev
  */
 
-export class ApiService {
+class ApiService {
     constructor() {
-        this.baseUrl = 'http://localhost:8000';
+        this.baseUrl = 'https://ordem-da-fenix-api.fly.dev';
         this.isOnline = false;
     }
 
@@ -69,7 +69,10 @@ export class ApiService {
             }
             
             const data = await response.json();
-            console.log(`📊 Carregados ${data.total} compressores da API`);
+            // Log apenas quando necessário para evitar spam
+            if (data.total > 0) {
+                console.log(`📊 ${data.total} compressores disponíveis`);
+            }
             return data;
             
         } catch (error) {

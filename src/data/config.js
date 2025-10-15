@@ -7,9 +7,10 @@ export const appConfig = {
     
     // Intervalos de atualização
     updateInterval: {
-        realTimeData: 2000, // 2 segundos
+        realTimeData: 30000, // 30 segundos - para lista
+        modalData: 60000,   // 60 segundos (1 minuto) - para modal 
         chartData: 5000,    // 5 segundos
-        healthCheck: 30000, // 30 segundos - verificar API
+        healthCheck: 300000, // 5 minutos - verificar API
         retry: 10000        // 10 segundos - tentar reconectar
     },
     
@@ -37,7 +38,7 @@ export const appConfig = {
     
     // Configurações da API - URLs atualizadas
     api: {
-        baseUrl: 'http://localhost:8000', // URL da API real
+        baseUrl: 'https://ordem-da-fenix-api.fly.dev', // URL da API real
         timeout: 5000, // 5 segundos
         retries: 3,
         endpoints: {

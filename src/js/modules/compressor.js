@@ -7,7 +7,7 @@ import { apiService } from '../../data/api.js';
 import { appConfig, appState, configUtils } from '../../data/config.js';
 
 export class CompressorManager {
-    constructor() {
+    constructor(apiStatus = true) {
         this.compressores = document.querySelectorAll('.compressor');
         this.modal = document.getElementById('modal-detalhes');
         this.compressorIdElement = document.getElementById('compressor-id');
@@ -16,39 +16,20 @@ export class CompressorManager {
         this.tempoFuncionamentoElement = document.getElementById('tempo-funcionamento');
         this.temperaturaAmbienteElement = document.getElementById('temperatura-ambiente');
         this.intervaloDados = null;
-        this.useApi = true; // Sempre usar API
+        this.useApi = apiStatus; // Recebe status da API já verificado
+        this.alertaCriticoMostrado = false; // Flag para evitar spam de alertas
         
         this.init();
     }
 
     async init() {
-        await this.checkApiAvailability();
+        console.log(`🔧 CompressorManager - Modo: ${this.useApi ? 'API' : 'Offline'}`);
         this.setupEventListeners();
         
-        console.log('📋 CompressorManager inicializado - Modo: API');
+        console.log('📋 CompressorManager inicializado');
     }
 
-    /**
-     * Verifica se a API está disponível
-     */
-    async checkApiAvailability() {
-        try {
-            const health = await apiService.checkHealth();
-            if (health) {
-                this.useApi = true;
-                appState.apiStatus.isOnline = true;
-                appState.apiStatus.mode = 'online';
-                console.log('🚀 CompressorManager: API ativada');
-            } else {
-                throw new Error('API não disponível');
-            }
-        } catch (error) {
-            console.error('❌ API não disponível:', error.message);
-            this.useApi = false;
-            appState.apiStatus.isOnline = false;
-            appState.apiStatus.mode = 'offline';
-        }
-    }
+
 
     setupEventListeners() {
         // Usar delegação de eventos para elementos dinâmicos
@@ -86,10 +67,10 @@ export class CompressorManager {
             clearInterval(this.intervaloDados);
         }
         
-        // Criar novo intervalo baseado na configuração
+        // Criar novo intervalo baseado na configuração do modal (1 minuto)
         this.intervaloDados = setInterval(() => {
             this.atualizarDadosTempoReal();
-        }, appConfig.updateInterval.realTimeData);
+        }, appConfig.updateInterval.modalData);
     }
 
     fecharModal() {
@@ -108,39 +89,71 @@ export class CompressorManager {
         
         try {
             if (this.useApi) {
-                const [dadosResponse, compressorResponse] = await Promise.all([
-                    apiService.getDadosTempoReal(compressorId, 1),
-                    apiService.getCompressor(compressorId)
-                ]);
+                let dadosResponse = null;
+                let compressorResponse = null;
 
-                if (dadosResponse.dados && dadosResponse.dados.length > 0) {
-                    const ultimoDado = dadosResponse.dados[0];
-                    const dadosAtuais = {
-                        pressao: ultimoDado.pressao,
-                        temperatura: ultimoDado.temp_equipamento,
-                        temperaturaAmbiente: ultimoDado.temp_ambiente,
-                        potencia: ultimoDado.potencia_kw,
-                        ligado: ultimoDado.ligado,
-                        timestamp: ultimoDado.data_medicao
-                    };
+                try {
+                    [dadosResponse, compressorResponse] = await Promise.all([
+                        apiService.getDadosTempoReal(compressorId, 1),
+                        apiService.getCompressor(compressorId)
+                    ]);
+                } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar dados para compressor ${compressorId}:`, error.message);
                     
-                    const compressorInfo = compressorResponse.compressor;
-                    appState.apiStatus.mode = 'online';
-                    
-                    this.atualizarInterface(dadosAtuais, compressorInfo);
-                    this.atualizarAlertas(dadosAtuais, compressorInfo);
-                    
-                    // Disparar evento para sistema de notificações
-                    window.dispatchEvent(new CustomEvent('compressorDataUpdated', {
-                        detail: { 
-                            compressorId, 
-                            data: dadosAtuais,
-                            source: 'api'
-                        }
-                    }));
-                } else {
-                    this.mostrarEstadoOffline();
+                    // Se falhar dados de sensores, tentar só info do compressor
+                    try {
+                        compressorResponse = await apiService.getCompressor(compressorId);
+                    } catch (compError) {
+                        console.error(`❌ Erro ao buscar info do compressor ${compressorId}:`, compError.message);
+                        this.mostrarEstadoErro();
+                        return;
+                    }
                 }
+
+                const compressorInfo = compressorResponse?.compressor;
+                
+                if (!compressorInfo) {
+                    this.mostrarEstadoErro();
+                    return;
+                }
+
+                // Dados padrão caso não haja dados de sensores
+                let dadosAtuais = {
+                    pressao: 0.0,
+                    temperatura: 0.0,
+                    temperaturaAmbiente: 0.0,
+                    potencia: 0.0,
+                    ligado: compressorInfo.esta_ligado,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Se temos dados de sensores, usar eles
+                if (dadosResponse?.dados && dadosResponse.dados.length > 0) {
+                    const ultimoDado = dadosResponse.dados[0];
+                    dadosAtuais = {
+                        pressao: ultimoDado.pressao || 0.0,
+                        temperatura: ultimoDado.temp_equipamento || 0.0,
+                        temperaturaAmbiente: ultimoDado.temp_ambiente || 0.0,
+                        potencia: ultimoDado.potencia_kw || 0.0,
+                        ligado: compressorInfo.esta_ligado,
+                        timestamp: ultimoDado.data_medicao || new Date().toISOString()
+                    };
+                }
+                
+                console.log(`🔧 Modal - Compressor ${compressorId}: ligado=${dadosAtuais.ligado}, tem_dados_sensor=${!!dadosResponse?.dados}`);
+                appState.apiStatus.mode = 'online';
+                
+                this.atualizarInterface(dadosAtuais, compressorInfo);
+                this.atualizarAlertas(dadosAtuais, compressorInfo);
+                
+                // Disparar evento para sistema de notificações
+                window.dispatchEvent(new CustomEvent('compressorDataUpdated', {
+                    detail: { 
+                        compressorId, 
+                        data: dadosAtuais,
+                        source: 'api'
+                    }
+                }));
             } else {
                 this.mostrarEstadoOffline();
             }
@@ -158,36 +171,35 @@ export class CompressorManager {
         // Unidade sempre bar (conforme documentação da API)
         const unidadePressao = appConfig.units.pressao;
         
-        // Atualizar valores principais
-        this.pressaoElement.textContent = dados.ligado 
-            ? `${dados.pressao.toFixed(1)} ${unidadePressao}`
-            : `0.0 ${unidadePressao}`;
+        // Atualizar valores principais - sempre mostrar valor real da API
+        this.pressaoElement.textContent = `${dados.pressao.toFixed(1)} ${unidadePressao}`;
             
         this.temperaturaElement.textContent = `${dados.temperatura.toFixed(1)} ${appConfig.units.temperatura}`;
         
-        // Atualizar temperatura ambiente
-        if (this.temperaturaAmbienteElement && dados.temperaturaAmbiente) {
-            this.temperaturaAmbienteElement.textContent = `${dados.temperaturaAmbiente.toFixed(1)} ${appConfig.units.temperatura}`;
+        // Atualizar temperatura ambiente (sempre mostrar, mesmo se 0.0)
+        if (this.temperaturaAmbienteElement) {
+            const tempAmbiente = dados.temperaturaAmbiente !== undefined && dados.temperaturaAmbiente !== null 
+                ? dados.temperaturaAmbiente 
+                : 0.0;
+            this.temperaturaAmbienteElement.textContent = `${tempAmbiente.toFixed(1)} ${appConfig.units.temperatura}`;
         }
         
-        // Atualizar tempo de funcionamento (apenas para dados mock por enquanto)
-        if (!this.useApi) {
-            this.atualizarInformacoesAdicionais(this.compressorIdElement.textContent);
-        } else if (this.tempoFuncionamentoElement) {
-            // Para API, podemos calcular baseado no status
-            this.tempoFuncionamentoElement.textContent = dados.ligado ? 'Em operação' : 'Parado';
+        // Atualizar status de funcionamento
+        if (this.tempoFuncionamentoElement) {
+            if (dados.ligado) {
+                this.tempoFuncionamentoElement.textContent = 'Em Operação';
+                this.tempoFuncionamentoElement.className = 'text-2xl font-bold text-green-600';
+            } else {
+                this.tempoFuncionamentoElement.textContent = 'Parado';
+                this.tempoFuncionamentoElement.className = 'text-2xl font-bold text-red-600';
+            }
         }
         
-        // Consumo de energia (simulado se não vier da API)
+        // Consumo de energia (usar dados reais da API)
         const consumoElement = document.getElementById('consumo-energia');
         if (consumoElement) {
-            if (dados.ligado) {
-                // Estimar consumo baseado na pressão e temperatura
-                const consumoEstimado = (dados.pressao * 2.5) + (dados.temperatura * 0.3);
-                consumoElement.textContent = `${consumoEstimado.toFixed(1)} kW`;
-            } else {
-                consumoElement.textContent = '0.0 kW';
-            }
+            // Usar potência real da API em vez de estimativa
+            consumoElement.textContent = `${dados.potencia.toFixed(1)} kW`;
         }
     }
 
@@ -257,8 +269,45 @@ export class CompressorManager {
      * Aplica alertas vindos da API
      */
     aplicarAlertasApi(alertasApi) {
-        console.log('Alertas da API:', alertasApi);
-        // Implementar lógica específica para alertas da API se necessário
+        // Contar alertas críticos para mostrar notificação se necessário
+        const alertasCriticos = Object.entries(alertasApi).filter(([key, value]) => 
+            value === 'critico' || value === 'muito_alto'
+        );
+        
+        const alertasAltos = Object.entries(alertasApi).filter(([key, value]) => 
+            value === 'alto'
+        );
+        
+        // Mostrar notificação apenas para alertas críticos (sem spam)
+        if (alertasCriticos.length > 0 && !this.alertaCriticoMostrado) {
+            // Usar o sistema de notificação existente
+            if (window.notificationManager) {
+                const alertaTexto = alertasCriticos.map(([key, value]) => {
+                    const nomes = {
+                        'potencia': 'Potência',
+                        'temperatura_ambiente': 'Temp. Ambiente', 
+                        'pressao': 'Pressão',
+                        'temperatura_equipamento': 'Temp. Equipamento'
+                    };
+                    return nomes[key] || key;
+                }).join(', ');
+                
+                window.notificationManager.addNotification({
+                    type: 'alert',
+                    title: 'Alerta Crítico',
+                    message: `${alertaTexto} em níveis críticos`,
+                    compressorId: appState.activeCompressor,
+                    timestamp: new Date()
+                });
+            }
+            
+            this.alertaCriticoMostrado = true;
+            
+            // Reset flag após 30 segundos para permitir novo alerta se necessário
+            setTimeout(() => {
+                this.alertaCriticoMostrado = false;
+            }, 30000);
+        }
     }
 
     /**
@@ -272,6 +321,7 @@ export class CompressorManager {
         }
         if (this.tempoFuncionamentoElement) {
             this.tempoFuncionamentoElement.textContent = 'Offline';
+            this.tempoFuncionamentoElement.className = 'text-2xl font-bold text-gray-500';
         }
     }
 
@@ -283,6 +333,10 @@ export class CompressorManager {
         this.temperaturaElement.textContent = 'Erro';
         if (this.temperaturaAmbienteElement) {
             this.temperaturaAmbienteElement.textContent = 'Erro';
+        }
+        if (this.tempoFuncionamentoElement) {
+            this.tempoFuncionamentoElement.textContent = 'Erro';
+            this.tempoFuncionamentoElement.className = 'text-2xl font-bold text-red-600';
         }
     }
 
@@ -398,27 +452,7 @@ export class CompressorManager {
         return this.compressorIdElement.textContent;
     }
 
-    /**
-     * Força reconexão com API
-     */
-    async reconnectApi() {
-        console.log('🔄 Tentando reconectar com API...');
-        await this.checkApiAvailability();
-        return this.useApi;
-    }
 
-    /**
-     * Alterna modo de operação (API/Mock) - útil para testes
-     */
-    async toggleMode() {
-        if (this.useApi) {
-            this.useApi = false;
-            appState.apiStatus.mode = 'fallback';
-            console.log('📦 Alternado para modo mock');
-        } else {
-            await this.checkApiAvailability();
-            console.log(`🔄 Tentando modo API: ${this.useApi ? 'sucesso' : 'falhou'}`);
-        }
-        return this.useApi;
-    }
+
+
 }

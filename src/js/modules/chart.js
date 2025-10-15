@@ -184,7 +184,7 @@ export class ChartManager {
      */
     setCompressor(compressorId) {
         this.compressorId = parseInt(compressorId);
-        console.log(`📊 ChartManager: Compressor ${this.compressorId} selecionado`);
+        // Log removido para reduzir ruído - já logado no app.js
     }
 
     /**
@@ -203,7 +203,7 @@ export class ChartManager {
                 const response = await apiService.getDadosTempoReal(this.compressorId, appConfig.chart.dataPoints);
                 if (response.dados && response.dados.length > 0) {
                     const dadosHistoricos = response.dados.reverse(); // API retorna mais recente primeiro
-                    console.log(`📊 Carregados ${dadosHistoricos.length} pontos de dados da API`);
+                    // Log reduzido para performance
                     
                     this.dados = this.processDataForChart(dadosHistoricos, metric);
                     this.lastDataUpdate = Date.now();
@@ -422,15 +422,7 @@ export class ChartManager {
         }
     }
 
-    /**
-     * Alterna entre modo API e mock
-     */
-    async alternarModo() {
-        this.useApi = !this.useApi;
-        console.log(`📊 ChartManager: Alternado para modo ${this.useApi ? 'API' : 'mock'}`);
-        await this.recarregarDados();
-        return this.useApi;
-    }
+
 
     /**
      * Obtém estatísticas do gráfico

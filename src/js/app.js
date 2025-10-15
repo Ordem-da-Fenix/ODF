@@ -1,6 +1,6 @@
 /**
  * Arquivo principal da aplicação OFtech
- * Versão híbrida - integra API + fallback para mock
+ * Versão API - integração completa com API de produção
  */
 
 import { CompressorManager } from './modules/compressor.js';
@@ -118,17 +118,17 @@ class OFtechApp {
         // Marcar início das estatísticas
         appState.stats.startTime = new Date();
         
-        // 1. Verificar conectividade com API
+        // 1. Verificar conectividade com API (ÚNICA VEZ)
         await this.initializeApiConnection();
         
         // 2. Inicializar módulos base (sem dependência de API)
         this.modalManager = new ModalManager();
         this.notificationManager = new NotificationManager();
         
-        // 3. Inicializar módulos que dependem de API
-        this.compressorInterfaceManager = new CompressorInterfaceManager();
+        // 3. Inicializar módulos que dependem de API (passando status já verificado)
+        this.compressorInterfaceManager = new CompressorInterfaceManager(appState.apiStatus.isOnline);
         this.searchFilterManager = new SearchFilterManager();
-        this.compressorManager = new CompressorManager();
+        this.compressorManager = new CompressorManager(appState.apiStatus.isOnline);
         this.chartManager = new ChartManager();
         
         // 4. Aguardar inicialização dos módulos assíncronos
@@ -174,9 +174,9 @@ class OFtechApp {
                 throw new Error('Health check falhou');
             }
         } catch (error) {
-            console.warn('⚠️ API não disponível, modo fallback ativado:', error.message);
+            console.error('❌ API não disponível, sistema não pode funcionar:', error.message);
             appState.apiStatus.isOnline = false;
-            appState.apiStatus.mode = 'fallback';
+            appState.apiStatus.mode = 'offline';
             appState.apiStatus.retryCount++;
         }
     }
@@ -185,13 +185,9 @@ class OFtechApp {
      * Aguarda inicialização completa dos módulos
      */
     async waitForModulesInit() {
-        // Aguardar inicialização do CompressorManager se necessário
-        if (this.compressorManager && typeof this.compressorManager.init === 'function') {
-            await this.compressorManager.init();
-        }
-        
-        // Pequena pausa para sincronização
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Managers já foram inicializados em seus construtores
+        // Aguardar apenas sincronização final
+        await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     /**
@@ -216,7 +212,7 @@ class OFtechApp {
             this.notificationManager.addNotification({
                 type: isApiOnline ? 'sucesso' : 'info',
                 title: 'Sistema Iniciado',
-                message: `OFtech iniciado com sucesso. Modo: ${isApiOnline ? 'API Online' : 'Fallback (Mock)'}`,
+                message: `OFtech iniciado com sucesso. Modo: ${isApiOnline ? 'API Online' : 'Sistema Offline'}`,
                 compressorId: null
             });
 
@@ -286,7 +282,7 @@ class OFtechApp {
                 this.notificationManager.addNotification({
                     type: 'erro',
                     title: 'API Desconectada',
-                    message: 'Perdeu conexão com API. Usando dados mock temporariamente.',
+                    message: 'Perdeu conexão com API. Sistema funcionando em modo limitado.',
                     compressorId: null
                 });
             }
@@ -350,7 +346,7 @@ class OFtechApp {
                 appState.isModalOpen = false;
                 appState.activeCompressor = null;
                 
-                console.log('🔒 Modal fechado, atualizações pausadas');
+                // Modal fechado - log removido para reduzir ruído
             }
         });
 
@@ -529,27 +525,7 @@ class OFtechApp {
         return appState.apiStatus.isOnline;
     }
 
-    /**
-     * Alterna entre modo API e Mock (desenvolvimento)
-     */
-    async toggleApiMode() {
-        if (this.compressorManager && typeof this.compressorManager.toggleMode === 'function') {
-            const newMode = await this.compressorManager.toggleMode();
-            
-            if (this.chartManager && typeof this.chartManager.alternarModo === 'function') {
-                await this.chartManager.alternarModo();
-            }
-            
-            this.notificationManager.addNotification({
-                type: 'info',
-                title: 'Modo Alternado',
-                message: `Sistema alternado para modo ${newMode ? 'API' : 'Mock'}`,
-                compressorId: null
-            });
-            
-            return newMode;
-        }
-    }
+
 
     /**
      * Mostra informações de debug
