@@ -73,7 +73,7 @@ class OFtechApp {
 
         bindCard(cardPressao, "pressao", "btn-pressao");
         bindCard(cardTemperatura, "temperatura", "btn-temperatura");
-        bindCard(cardConsumo, "temperaturaAmbiente", "btn-consumo"); // Usando card de consumo para temp ambiente
+        bindCard(cardConsumo, "potencia", "btn-consumo"); // Card de consumo mostra potência/energia
     }
 
     _highlightMetricButton(id) {

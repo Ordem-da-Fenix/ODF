@@ -91,7 +91,9 @@ export class ChartManager {
                     ticks: {
                         color: '#6b7280',
                         callback: function(value) {
-                            return value.toFixed(1) + ' ' + metricConfig.unit;
+                            // Temperaturas com 1 casa decimal, outros com 2 casas
+                            const casasDecimais = metricConfig.unit === '°C' ? 1 : 2;
+                            return value.toFixed(casasDecimais) + ' ' + metricConfig.unit;
                         }
                     }
                 },
@@ -116,6 +118,17 @@ export class ChartManager {
             interaction: {
                 intersect: false,
                 mode: 'index'
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            // Temperaturas com 1 casa decimal, outros com 2 casas
+                            const casasDecimais = metricConfig.unit === '°C' ? 1 : 2;
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(casasDecimais) + ' ' + metricConfig.unit;
+                        }
+                    }
+                }
             },
             elements: {
                 point: {
@@ -151,6 +164,13 @@ export class ChartManager {
                 unit: '°C',
                 color: appConfig.chart.colors.temperaturaAmbiente,
                 field: 'temp_ambiente'
+            },
+            potencia: {
+                title: `Consumo de Energia - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: 'Potência (kW)',
+                unit: 'kW',
+                color: appConfig.chart.colors.primary,
+                field: 'potencia_kw'
             },
             consumo: {
                 title: `Consumo Estimado - Últimas ${appConfig.chart.dataPoints}h`,
@@ -248,6 +268,9 @@ export class ChartManager {
                     case 'temperaturaAmbiente':
                         value = item.temp_ambiente || 0;
                         break;
+                    case 'potencia':
+                        value = item.potencia_kw || 0;
+                        break;
                     case 'consumo':
                         // Estimar consumo baseado em pressão e temperatura
                         value = (item.pressao * 2.5) + (item.temp_equipamento * 0.3);
@@ -338,9 +361,9 @@ export class ChartManager {
             let novoValor = null;
             
             if (this.useApi) {
-                // Buscar dados mais recentes da API
+                // Buscar dados mais recentes da API (usar 5 para contornar bug com limit=1)
                 try {
-                    const response = await apiService.getDadosTempoReal(this.compressorId, 1);
+                    const response = await apiService.getDadosTempoReal(this.compressorId, 5);
                     if (response.dados && response.dados.length > 0) {
                         const ultimoDado = response.dados[0];
                         
@@ -353,6 +376,9 @@ export class ChartManager {
                                 break;
                             case 'temperaturaAmbiente':
                                 novoValor = ultimoDado.temp_ambiente || 0;
+                                break;
+                            case 'potencia':
+                                novoValor = ultimoDado.potencia_kw || 0;
                                 break;
                             case 'consumo':
                                 novoValor = (ultimoDado.pressao * 2.5) + (ultimoDado.temp_equipamento * 0.3);

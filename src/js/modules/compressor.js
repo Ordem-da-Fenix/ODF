@@ -15,6 +15,8 @@ export class CompressorManager {
         this.temperaturaElement = document.getElementById('temperatura');
         this.tempoFuncionamentoElement = document.getElementById('tempo-funcionamento');
         this.temperaturaAmbienteElement = document.getElementById('temperatura-ambiente');
+        this.umidadeElement = document.getElementById('umidade');
+        this.vibracaoElement = document.getElementById('vibracao');
         this.intervaloDados = null;
         this.useApi = apiStatus; // Recebe status da API já verificado
         this.alertaCriticoMostrado = false; // Flag para evitar spam de alertas
@@ -94,7 +96,7 @@ export class CompressorManager {
 
                 try {
                     [dadosResponse, compressorResponse] = await Promise.all([
-                        apiService.getDadosTempoReal(compressorId, 1),
+                        apiService.getDadosTempoReal(compressorId, 5), // Usar 5 para contornar bug da API com limit=1
                         apiService.getCompressor(compressorId)
                     ]);
                 } catch (error) {
@@ -123,6 +125,8 @@ export class CompressorManager {
                     temperatura: 0.0,
                     temperaturaAmbiente: 0.0,
                     potencia: 0.0,
+                    umidade: 0.0,
+                    vibracao: false,
                     ligado: compressorInfo.esta_ligado,
                     timestamp: new Date().toISOString()
                 };
@@ -135,6 +139,8 @@ export class CompressorManager {
                         temperatura: ultimoDado.temp_equipamento || 0.0,
                         temperaturaAmbiente: ultimoDado.temp_ambiente || 0.0,
                         potencia: ultimoDado.potencia_kw || 0.0,
+                        umidade: ultimoDado.umidade || 0.0,
+                        vibracao: ultimoDado.vibracao || false,
                         ligado: compressorInfo.esta_ligado,
                         timestamp: ultimoDado.data_medicao || new Date().toISOString()
                     };
@@ -172,16 +178,49 @@ export class CompressorManager {
         const unidadePressao = appConfig.units.pressao;
         
         // Atualizar valores principais - sempre mostrar valor real da API
-        this.pressaoElement.textContent = `${dados.pressao.toFixed(1)} ${unidadePressao}`;
+        this.pressaoElement.textContent = `${dados.pressao.toFixed(2)} ${unidadePressao}`; // 2 casas decimais
             
-        this.temperaturaElement.textContent = `${dados.temperatura.toFixed(1)} ${appConfig.units.temperatura}`;
+        this.temperaturaElement.textContent = `${dados.temperatura.toFixed(1)} ${appConfig.units.temperatura}`; // 1 casa decimal
         
         // Atualizar temperatura ambiente (sempre mostrar, mesmo se 0.0)
         if (this.temperaturaAmbienteElement) {
             const tempAmbiente = dados.temperaturaAmbiente !== undefined && dados.temperaturaAmbiente !== null 
                 ? dados.temperaturaAmbiente 
                 : 0.0;
-            this.temperaturaAmbienteElement.textContent = `${tempAmbiente.toFixed(1)} ${appConfig.units.temperatura}`;
+            this.temperaturaAmbienteElement.textContent = `${tempAmbiente.toFixed(1)} ${appConfig.units.temperatura}`; // 1 casa decimal
+        }
+        
+        // Atualizar umidade (NOVIDADE)
+        if (this.umidadeElement) {
+            const umidade = dados.umidade !== undefined && dados.umidade !== null 
+                ? dados.umidade 
+                : 0.0;
+            this.umidadeElement.textContent = `${umidade.toFixed(2)}${appConfig.units.umidade}`;
+        }
+        
+        // Atualizar vibração (NOVIDADE)
+        if (this.vibracaoElement) {
+            const vibracao = dados.vibracao !== undefined && dados.vibracao !== null 
+                ? dados.vibracao 
+                : false;
+            
+            if (vibracao) {
+                this.vibracaoElement.textContent = 'Detectada';
+                this.vibracaoElement.className = 'text-2xl font-bold text-red-600';
+                // Atualizar card para estado crítico
+                const cardVibracao = document.getElementById('card-vibracao');
+                if (cardVibracao) {
+                    cardVibracao.className = 'bg-white p-6 rounded-lg text-center border border-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500';
+                }
+            } else {
+                this.vibracaoElement.textContent = 'Normal';
+                this.vibracaoElement.className = 'text-2xl font-bold text-green-600';
+                // Atualizar card para estado normal
+                const cardVibracao = document.getElementById('card-vibracao');
+                if (cardVibracao) {
+                    cardVibracao.className = 'bg-white p-6 rounded-lg text-center border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-500';
+                }
+            }
         }
         
         // Atualizar status de funcionamento
@@ -198,8 +237,8 @@ export class CompressorManager {
         // Consumo de energia (usar dados reais da API)
         const consumoElement = document.getElementById('consumo-energia');
         if (consumoElement) {
-            // Usar potência real da API em vez de estimativa
-            consumoElement.textContent = `${dados.potencia.toFixed(1)} kW`;
+            // Usar potência real da API em vez de estimativa (2 casas decimais)
+            consumoElement.textContent = `${dados.potencia.toFixed(2)} kW`;
         }
     }
 
@@ -232,7 +271,7 @@ export class CompressorManager {
         const cards = {
             'card-pressao': alertas.pressao,
             'card-temperatura': alertas.temperatura,
-            'card-consumo': alertas.temperaturaAmbiente // usando card de consumo para temp ambiente
+            'card-consumo': alertas.potencia // card de consumo mostra potência
         };
 
         Object.entries(cards).forEach(([cardId, nivel]) => {

@@ -53,8 +53,8 @@ export class CompressorInterfaceManager {
                             let dadosTempoReal = null;
 
                             try {
-                                // Buscar dados de sensor em tempo real
-                                dadosTempoReal = await apiService.getDadosTempoReal(comp.id_compressor, 1);
+                                // Buscar dados de sensor em tempo real (usar 5 para contornar bug da API com limit=1)
+                                dadosTempoReal = await apiService.getDadosTempoReal(comp.id_compressor, 5);
                             } catch (error) {
                                 console.warn(`⚠️ Dados em tempo real não disponíveis para compressor ${comp.id_compressor}:`, error.message);
                             }
@@ -145,7 +145,10 @@ export class CompressorInterfaceManager {
             alertas: this.hasAlertas(compressor.alertas),
             temperatura: this.extrairTemperatura(compressor.apiData),
             temperaturaAmbiente: this.extrairTemperaturaAmbiente(compressor.apiData),
-            pressao: this.extrairPressao(compressor.apiData)
+            pressao: this.extrairPressao(compressor.apiData),
+            potenciaAtual: this.extrairPotenciaApi(compressor.apiData),
+            umidade: this.extrairUmidade(compressor.apiData),
+            vibracao: this.extrairVibracao(compressor.apiData)
         };
 
         // Definir todos os atributos necessários para o sistema de filtros
@@ -277,7 +280,7 @@ export class CompressorInterfaceManager {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
-                    ${dadosCompressor.pressao.toFixed(1)} bar
+                    ${dadosCompressor.pressao.toFixed(2)} bar
                 </span>
             `);
         }
@@ -290,7 +293,32 @@ export class CompressorInterfaceManager {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
-                    ${dadosCompressor.potenciaAtual.toFixed(1)} kW atual
+                    ${dadosCompressor.potenciaAtual.toFixed(2)} kW atual
+                </span>
+            `);
+        }
+
+        // Umidade (NOVIDADE)
+        if (dadosCompressor.umidade !== undefined && dadosCompressor.umidade !== null) {
+            const nivelUmidade = this.calcularNivelAlerta('umidade', dadosCompressor.umidade);
+            const emoji = appConfig.alertas.umidade[nivelUmidade]?.emoji || '💧';
+            items.push(`
+                <span class="flex items-center gap-1">
+                    <span class="text-xs">${emoji}</span>
+                    ${dadosCompressor.umidade.toFixed(2)}%
+                </span>
+            `);
+        }
+
+        // Vibração (NOVIDADE)
+        if (dadosCompressor.vibracao !== undefined && dadosCompressor.vibracao !== null) {
+            const nivelVibracao = dadosCompressor.vibracao ? 'critico' : 'normal';
+            const emoji = appConfig.alertas.vibracao[nivelVibracao]?.emoji || '🟢';
+            const texto = appConfig.alertas.vibracao[nivelVibracao]?.texto || 'Normal';
+            items.push(`
+                <span class="flex items-center gap-1">
+                    <span class="text-xs">${emoji}</span>
+                    ${texto}
                 </span>
             `);
         }
@@ -467,6 +495,32 @@ export class CompressorInterfaceManager {
     }
 
     /**
+     * Extrai umidade dos dados da API (NOVIDADE)
+     */
+    extrairUmidade(apiData) {
+        if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+            const ultimoDado = apiData[0];
+            if (ultimoDado.umidade !== undefined && ultimoDado.umidade !== null) {
+                return parseFloat(ultimoDado.umidade);
+            }
+        }
+        return 0.0; // Padronização: sem dados = 0.0
+    }
+
+    /**
+     * Extrai vibração dos dados da API (NOVIDADE)
+     */
+    extrairVibracao(apiData) {
+        if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+            const ultimoDado = apiData[0];
+            if (ultimoDado.vibracao !== undefined && ultimoDado.vibracao !== null) {
+                return Boolean(ultimoDado.vibracao);
+            }
+        }
+        return false; // Padronização: sem dados = false (normal)
+    }
+
+    /**
      * Extrai potência do nome (fallback quando API não disponível)
      */
     extrairPotencia(nome) {
@@ -522,6 +576,28 @@ export class CompressorInterfaceManager {
 
         // Assumir ~12h de operação por dia
         return Math.floor(diasOperacao * 12 * 0.8); // 80% de uptime
+    }
+
+    /**
+     * Calcula nível de alerta para um parâmetro (NOVIDADE)
+     */
+    calcularNivelAlerta(parametro, valor) {
+        const limites = appConfig.alertas[parametro];
+        if (!limites) return 'normal';
+
+        // Para vibração (boolean)
+        if (parametro === 'vibracao') {
+            return valor ? 'critico' : 'normal';
+        }
+
+        // Para parâmetros numéricos
+        for (const [nivel, config] of Object.entries(limites)) {
+            if (valor >= config.min && (config.max === 999 || valor < config.max)) {
+                return nivel;
+            }
+        }
+
+        return 'normal';
     }
 
     /**

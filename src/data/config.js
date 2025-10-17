@@ -76,11 +76,22 @@ export const appConfig = {
             critico: { min: 85, max: 999, color: '#ef4444', emoji: '🔴' }
         },
         temperatura_ambiente: {
-            muito_baixo: { min: -20, max: 15, color: '#3b82f6', emoji: '🔵' },
+            muito_baixo: { min: 0, max: 15, color: '#3b82f6', emoji: '🔵' },
             baixo: { min: 15, max: 20, color: '#eab308', emoji: '🟡' },
             normal: { min: 20, max: 30, color: '#22c55e', emoji: '🟢' },
             alto: { min: 30, max: 35, color: '#f97316', emoji: '🟠' },
             critico: { min: 35, max: 999, color: '#ef4444', emoji: '🔴' }
+        },
+        umidade: {
+            muito_baixo: { min: 0, max: 30, color: '#3b82f6', emoji: '💧' },
+            baixo: { min: 30, max: 40, color: '#eab308', emoji: '🟡' },
+            normal: { min: 40, max: 60, color: '#22c55e', emoji: '🟢' },
+            alto: { min: 60, max: 70, color: '#f97316', emoji: '🟠' },
+            critico: { min: 70, max: 100, color: '#ef4444', emoji: '🔴' }
+        },
+        vibracao: {
+            normal: { value: false, color: '#22c55e', emoji: '🟢', texto: 'Normal' },
+            critico: { value: true, color: '#ef4444', emoji: '⚠️', texto: 'Detectada' }
         }
     },
     
@@ -88,6 +99,7 @@ export const appConfig = {
     units: {
         pressao: 'bar', // API usa bar, não PSI
         temperatura: '°C',
+        umidade: '%',
         tempo: 'h'
     }
 };

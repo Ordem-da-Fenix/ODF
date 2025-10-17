@@ -86,3 +86,6 @@ tmp/
 *.swp
 *.swo
 *~
+
+# Documentation
+API_DOCUMENTATION.md

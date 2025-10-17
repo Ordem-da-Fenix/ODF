@@ -5,15 +5,15 @@ Sistema web avançado para monitoramento em tempo real de compressores industria
 
 ## 🚀 Funcionalidades Principais
 - ✅ **Integração completa com API REST** - Dados reais em tempo real
-- ✅ **Sistema híbrido** - Fallback automático para dados mock
-- ✅ **Monitoramento avançado** - Pressão, temperatura, eficiência e consumo
+- ✅ **Monitoramento industrial avançado** - **7 parâmetros**: pressão, temperatura equipamento/ambiente, potência, **umidade**, **vibração** 
+- ✅ **Sistema de alertas inteligente** - 5 níveis (muito baixo → crítico) com cores e emojis
 - ✅ **Interface dinâmica** - Cards gerados automaticamente da API
-- ✅ **Filtros inteligentes** - Pesquisa e filtragem por múltiplos critérios
-- ✅ **Gráficos em tempo real** - Histórico e dados atuais com Chart.js
-- ✅ **Sistema de alertas** - Notificações de status e problemas
-- ✅ **Modais interativos** - Detalhes completos dos equipamentos
+- ✅ **Gráficos interativos** - 3 tipos: Pressão, Temperatura e Consumo com tooltips precisos
+- ✅ **Filtros avançados** - Pesquisa e filtragem por múltiplos critérios
+- ✅ **Modais completos** - 7 cards informativos + gráfico integrado
 - ✅ **Design responsivo** - Interface adaptável com Tailwind CSS
 - ✅ **Health monitoring** - Verificação automática de conectividade
+- ✅ **Formatação precisa** - Temperaturas (1 casa), demais parâmetros (2 casas decimais)
 
 ## 📁 Estrutura do Projeto
 ```
@@ -168,14 +168,25 @@ GET /health               // Health check da API
 ### Estrutura de Dados da API
 ```json
 {
-  "id_compressor": "COMP001",
-  "nome_marca": "Atlas Copco GA22", 
+  "id_compressor": 1001,
+  "nome_marca": "Atlas Copco GA22 VSD+", 
   "esta_ligado": true,
-  "localizacao": "Setor A - Linha de Produção 1",
-  "data_cadastro": "2024-01-15T10:30:00Z",
-  "pressao": 7.2,
-  "temperatura": 78.5,
-  "eficiencia": 87.3
+  "localizacao": "Setor A - Galpão Principal",
+  "data_cadastro": "2025-10-15T18:31:40Z",
+  "pressao": 8.75,
+  "temp_equipamento": 38.5,
+  "temp_ambiente": 25.0,
+  "potencia_kw": 0.35,
+  "umidade": 40.25,
+  "vibracao": false,
+  "alertas": {
+    "pressao": "normal",
+    "temperatura_equipamento": "normal", 
+    "temperatura_ambiente": "normal",
+    "potencia": "normal",
+    "umidade": "normal",
+    "vibracao": "normal"
+  }
 }
 ```
 
@@ -186,12 +197,13 @@ GET /health               // Health check da API
 - **Sem login**: Sistema funciona diretamente sem autenticação
 - **Dados consistentes**: Mock segue estrutura da API documentada
 
-#### Compressores Simulados
+#### Compressores Simulados  
 - **5 compressores** com diferentes status e fabricantes (Atlas Copco, Schulz, Kaeser, Chicago Pneumatic, Ingersoll Rand)
-- **Dados compatíveis com API**: Campos `pressao` (bar), `temp_equipamento`, `temp_ambiente`, `potencia_kw`
-- **Sistema de alertas**: 4 parâmetros com 5 níveis (muito_baixo, baixo, normal, alto, critico)
-- **Histórico completo** de energia e operação (24h)
+- **7 parâmetros monitorados**: `pressao` (bar), `temp_equipamento`, `temp_ambiente`, `potencia_kw`, **`umidade`**, **`vibracao`**
+- **Sistema de alertas avançado**: 7 parâmetros com 5 níveis (muito_baixo 🔵, baixo 🟡, normal 🟢, alto 🟠, critico 🔴)
+- **Histórico completo** de energia e operação (24h) com precisão de 2 casas decimais
 - **Geolocalização** por setores (A, B, C, D, E)
+- **Formatação inteligente**: Temperaturas 1 casa decimal, demais 2 casas
 
 ## �️ Configurações e Personalização
 
@@ -227,6 +239,49 @@ retryDelay: 2000              // Delay entre tentativas
 - **Setor**: A, B, C, D, etc.
 - **Potência**: Filtro por kW mínimo
 - **Alertas**: Com ou sem alertas ativos
+- **Novos Parâmetros**: Umidade e vibração nos cards da lista
+
+## 🆕 **NOVIDADES v2.0 - Monitoramento Industrial Avançado**
+
+### ✨ **Novos Parâmetros Monitorados**
+- 💧 **Umidade Ambiente**: Monitoramento de umidade (0-100%) com 5 níveis de alerta
+- ⚡ **Vibração do Equipamento**: Detecção binária (Normal/Detectada) para manutenção preditiva
+- 📊 **Total**: 7 parâmetros industriais completos
+
+### 🎯 **Sistema de Alertas Expandido**
+```javascript
+// Configuração dos novos parâmetros
+umidade: {
+  muito_baixo: "0-30%",   // 🔵 Ar muito seco
+  baixo: "30-40%",        // 🟡 Pouco úmido  
+  normal: "40-60%",       // 🟢 Ideal
+  alto: "60-70%",         // 🟠 Úmido
+  critico: "70-100%"      // 🔴 Muito úmido
+},
+vibracao: {
+  normal: false,          // 🟢 Sem vibração
+  critico: true           // 🔴 Vibração detectada
+}
+```
+
+### 🖥️ **Interface Aprimorada**
+- **Modal Completo**: 7 cards (5 clicáveis para gráficos + 2 informativos)
+- **Lista Inteligente**: Todos os parâmetros exibidos com emojis de status
+- **Gráficos Otimizados**: 3 tipos - Pressão, Temperatura Equipamento, Consumo
+- **Cards Não-Clicáveis**: Umidade e Vibração são apenas informativos
+
+### 📐 **Formatação Precisa**
+- **Temperaturas**: 38.5°C (1 casa decimal)
+- **Pressão**: 8.75 bar (2 casas decimais)
+- **Potência**: 0.35 kW (2 casas decimais)
+- **Umidade**: 40.25% (2 casas decimais)
+- **Tooltips**: Formatação automática por tipo de dado
+
+### 🔧 **Melhorias Técnicas**
+- **API Otimizada**: Uso de `limit=5` para contornar bugs de `limit=1`
+- **Dados Reais**: Sistema usa dados da API sem fallbacks desnecessários  
+- **Alertas Automáticos**: Calculados pela API e exibidos em tempo real
+- **Precisão Visual**: Formatação consistente em todos os componentes
 
 ## 📱 Responsividade
 - Design mobile-first
@@ -240,17 +295,21 @@ retryDelay: 2000              // Delay entre tentativas
 
 ## ✅ Status do Projeto
 
-### 🎉 Funcionalidades Implementadas
+### 🎉 Funcionalidades Implementadas *(Última atualização: 17/10/2025)*
 - [x] **API REST Integration** - Integração completa com backend
-- [x] **Sistema Híbrido** - Fallback automático para mock
-- [x] **Interface Dinâmica** - Renderização automática da API  
+- [x] **Monitoramento Industrial Completo** - **7 parâmetros**: pressão, temperatura equipamento/ambiente, potência, **umidade**, **vibração**
+- [x] **Sistema de Alertas Avançado** - 5 níveis com cores e emojis automáticos
+- [x] **Interface Dinâmica Aprimorada** - Renderização automática com novos parâmetros
+- [x] **Gráficos Interativos Melhorados** - 3 tipos com tooltips precisos (1-2 casas decimais)
+- [x] **Modal Completo** - 7 cards informativos (5 clicáveis + 2 informativos)
+- [x] **Formatação Inteligente** - Temperaturas 1 casa, demais 2 casas decimais
 - [x] **Filtros Avançados** - Sistema completo de filtragem
 - [x] **Health Monitoring** - Monitoramento de conectividade
-- [x] **Real-time Updates** - Atualizações automáticas
-- [x] **Event Delegation** - Eventos funcionam com conteúdo dinâmico
-- [x] **Error Handling** - Tratamento robusto de erros
+- [x] **Real-time Updates** - Atualizações automáticas com dados mais recentes
+- [x] **Event Delegation** - Eventos funcionam com conteúdo dinâmico  
+- [x] **Error Handling** - Tratamento robusto de erros e fallbacks
 - [x] **Responsive Design** - Interface adaptável
-- [x] **Data Extraction** - Algoritmos inteligentes de extração
+- [x] **Data Extraction** - Algoritmos inteligentes de extração com novos parâmetros
 
 ### 🚧 Próximas Melhorias
 

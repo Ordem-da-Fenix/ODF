@@ -1,50 +1,57 @@
 # 📊 API - Ordem da Fenix - Documentação de Rotas
 
 ## 🔧 Informações Gerais
-- **Base URL**: `http://localhost:8000` (desenvolvimento)
-- **Timezone**: Brasil (UTC-3)
+- **Base URL Produção**: `https://ordem-da-fenix-api.fly.dev` 
+- **Base URL Desenvolvimento**: `http://localhost:8000`
+- **Timezone**: Brasil (UTC-3) - America/Sao_Paulo
 - **Formato de dados**: JSON
-- **Autenticação**: Não requerida (desenvolvimento)
-- **Sistema de Alertas**: 5 níveis integrados aos compressores
-- **Monitoramento**: Tempo real com alertas automáticos
+- **Autenticação**: Não requerida
+- **Sistema de Alertas**: 7 parâmetros com 5 níveis integrados
+- **Monitoramento**: Tempo real com alertas automáticos e status do compressor
+- **CORS**: Configurado para GitHub Pages e desenvolvimento local
 
 ---
 
-## 📡 **SENSORES** - Coleta de Dados
+## 📡 **SENSORES** - Coleta de Dados Avançada
 
 ### 📤 **POST /sensor**
-Recebe e armazena dados coletados pelos sensores dos compressores.
+Recebe e armazena dados coletados pelos sensores dos compressores com **7 parâmetros monitorados**.
 
 **Endpoint**: `POST /sensor`
 
-**Body (JSON)**:
+**Body (JSON)** - Todos os campos obrigatórios:
 ```json
 {
   "id_compressor": 1001,
   "ligado": true,
   "pressao": 8.5,
-  "temp_equipamento": 77.0,
-  "temp_ambiente": 20.0,
+  "temp_equipamento": 75.0,
+  "temp_ambiente": 23.0,
   "potencia_kw": 22.0,
-  "data_medicao": "2024-10-13T10:30:00-03:00"  // Opcional
+  "umidade": 55.0,
+  "vibracao": false,
+  "data_medicao": "2025-10-17T10:30:00-03:00"  // Opcional
 }
 ```
 
 **Validações**:
 - `id_compressor`: Inteiro positivo, deve existir no sistema
-- `ligado`: Boolean obrigatório
-- `pressao`: Float ≥ 0 (em bar)
-- `temp_equipamento`: Float (temperatura em °C)
-- `temp_ambiente`: Float (temperatura em °C)
+- `ligado`: Boolean obrigatório (atualiza status do compressor automaticamente)
+- `pressao`: Float ≥ 0 (pressão em bar)
+- `temp_equipamento`: Float (temperatura do equipamento em °C)
+- `temp_ambiente`: Float (temperatura ambiente em °C)
 - `potencia_kw`: Float ≥ 0 (consumo de energia em kW)
-- `data_medicao`: Opcional, preenchida automaticamente se omitida
+- `umidade`: Float 0-100 (percentual de umidade ambiente)
+- `vibracao`: Boolean (detecção de vibração anormal)
+- `data_medicao`: Opcional, preenchida automaticamente com timezone brasileiro
 
-**Funcionalidade Adicional**:
-- **Sistema de Alertas**: Automaticamente avalia os dados e atualiza os alertas do compressor
-- **5 Níveis**: muito_baixo 🔵, baixo 🟡, normal 🟢, alto 🟠, critico 🔴
-- **4 Parâmetros**: pressão, temperatura_equipamento, temperatura_ambiente, potencia
-- **Compressores Médios**: Baseado em especificações industriais (15-37 kW)
-- **Integração**: Alertas são salvos nas informações do compressor, não nos dados do sensor
+**Funcionalidades Automáticas**:
+- ✅ **Atualização de Status**: Campo `esta_ligado` do compressor atualizado automaticamente
+- ✅ **Data de Atualização**: Campo `data_ultima_atualizacao` do compressor preenchido
+- ✅ **Sistema de Alertas**: Avalia automaticamente os 7 parâmetros
+- ✅ **5 Níveis**: muito_baixo 🔵, baixo 🟡, normal 🟢, alto 🟠, critico 🔴
+- ✅ **7 Parâmetros**: pressão, temperatura_equipamento, temperatura_ambiente, potencia, umidade, vibração
+- ✅ **Integração Completa**: Alertas salvos nas informações do compressor
 
 **Respostas**:
 ```json
@@ -54,7 +61,7 @@ Recebe e armazena dados coletados pelos sensores dos compressores.
   "message": "Dados do sensor salvos com sucesso",
   "firestore_id": "abc123xyz",
   "id_compressor": 1001,
-  "data_medicao": "2024-10-13T10:30:00-03:00"
+  "data_medicao": "2025-10-17T10:30:00-03:00"
 }
 
 // ❌ Compressor não existe (404)
@@ -66,9 +73,9 @@ Recebe e armazena dados coletados pelos sensores dos compressores.
 {
   "detail": [
     {
-      "loc": ["body", "pressao"],
-      "msg": "ensure this value is greater than or equal to 0",
-      "type": "value_error.number.not_ge"
+      "loc": ["body", "umidade"],
+      "msg": "ensure this value is less than or equal to 100",
+      "type": "value_error.number.not_le"
     }
   ]
 }
@@ -77,7 +84,7 @@ Recebe e armazena dados coletados pelos sensores dos compressores.
 ---
 
 ### 📥 **GET /dados**
-Lista todos os dados de sensores coletados.
+Lista todos os dados de sensores coletados com os 7 parâmetros.
 
 **Endpoint**: `GET /dados`
 
@@ -91,11 +98,14 @@ Lista todos os dados de sensores coletados.
       "id_compressor": 1001,
       "ligado": true,
       "pressao": 8.5,
-      "temp_equipamento": 65.2,
-      "temp_ambiente": 23.8,
-      "data_medicao": "2024-10-13T10:30:00-03:00"
+      "temp_equipamento": 75.0,
+      "temp_ambiente": 23.0,
+      "potencia_kw": 22.0,
+      "umidade": 55.0,
+      "vibracao": false,
+      "data_medicao": "2025-10-17T10:30:00-03:00"
     }
-    // ... mais registros
+    // ... mais registros ordenados por data (mais recente primeiro)
   ]
 }
 ```
@@ -103,7 +113,7 @@ Lista todos os dados de sensores coletados.
 ---
 
 ### 📊 **GET /dados/{id_compressor}**
-Busca dados de sensores de um compressor específico.
+Busca dados de sensores de um compressor específico com todos os 7 parâmetros.
 
 **Endpoint**: `GET /dados/{id_compressor}`
 
@@ -124,9 +134,12 @@ Busca dados de sensores de um compressor específico.
       "id_compressor": 1001,
       "ligado": true,
       "pressao": 8.5,
-      "temp_equipamento": 65.2,
-      "temp_ambiente": 23.8,
-      "data_medicao": "2024-10-13T10:30:00-03:00"
+      "temp_equipamento": 75.0,
+      "temp_ambiente": 23.0,
+      "potencia_kw": 22.0,
+      "umidade": 55.0,
+      "vibracao": false,
+      "data_medicao": "2025-10-17T10:30:00-03:00"
     }
     // ... ordenados por data (mais recente primeiro)
   ]
@@ -138,7 +151,7 @@ Busca dados de sensores de um compressor específico.
 ## 🏭 **COMPRESSORES** - Gestão de Equipamentos
 
 ### 📤 **POST /compressores/**
-Cadastra um novo compressor no sistema.
+Cadastra um novo compressor no sistema com status automático via sensor.
 
 **Endpoint**: `POST /compressores/`
 
@@ -150,8 +163,8 @@ Cadastra um novo compressor no sistema.
   "localizacao": "Setor A - Galpão 1",
   "potencia_nominal_kw": 22.0,
   "configuracao": "Compressor Médio-Padrão",
-  "data_ultima_manutencao": "2024-09-15T10:00:00-03:00",  // Opcional
-  "esta_ligado": false  // Padrão: false
+  "data_ultima_manutencao": "2025-10-15T10:00:00-03:00",  // Opcional
+  "esta_ligado": false  // Padrão: false (atualizado automaticamente via sensor)
 }
 ```
 
@@ -161,8 +174,14 @@ Cadastra um novo compressor no sistema.
 - `localizacao`: String 1-200 caracteres
 - `potencia_nominal_kw`: Float 15-37 kW (faixa média)
 - `configuracao`: String (padrão: "Compressor Médio-Padrão")
-- `data_ultima_manutencao`: Opcional
-- `esta_ligado`: Boolean (padrão: false)
+- `data_ultima_manutencao`: Opcional (datetime)
+- `esta_ligado`: Boolean (padrão: false, atualizado via sensor automaticamente)
+
+**Campos Automáticos**:
+- `data_cadastro`: Preenchido automaticamente
+- `data_ultima_atualizacao`: Atualizado quando sensor envia dados
+- `alertas`: Gerados automaticamente via sistema de 7 parâmetros
+- `ultima_atualizacao_alertas`: Timestamp da última avaliação
 
 **Respostas**:
 ```json
@@ -172,7 +191,7 @@ Cadastra um novo compressor no sistema.
   "message": "Compressor cadastrado com sucesso",
   "firestore_id": "def456abc",
   "id_compressor": 1001,
-  "data_cadastro": "2024-10-13T10:30:00-03:00"
+  "data_cadastro": "2025-10-17T10:30:00-03:00"
 }
 
 // ❌ ID já existe (400)
@@ -197,13 +216,6 @@ Lista todos os compressores cadastrados.
 - `GET /compressores/?ativo_apenas=true` - Apenas ligados
 - `GET /compressores/?ativo_apenas=false&limit=10` - Apenas desligados, máximo 10
 
-**💡 Nota para Frontend**: O sistema frontend implementa filtros avançados adicionais:
-- **Status**: Online/Offline (usa campo `esta_ligado`)
-- **Fabricante**: Extraído de `nome_marca` (Atlas Copco, Schulz, Kaeser, etc.)
-- **Setor**: Extraído de `localizacao` (Setor A, B, C, etc.)
-- **Potência**: Filtro por kW mínimo (extraído de `nome_marca` ou `potencia_nominal_kw`)
-- **Alertas**: Filtra por presença de alertas (campo `alertas`)
-
 **Resposta**:
 ```json
 {
@@ -212,21 +224,25 @@ Lista todos os compressores cadastrados.
     {
       "firestore_id": "def456abc",
       "id_compressor": 1001,
-      "nome_marca": "Atlas Copco GA55",
+      "nome_marca": "Atlas Copco GA22",
       "localizacao": "Setor A - Galpão 1",
-      "data_ultima_manutencao": "2024-09-15T10:00:00-03:00",
+      "potencia_nominal_kw": 22.0,
+      "configuracao": "Compressor Médio-Padrão",
+      "data_ultima_manutencao": "2025-10-15T10:00:00-03:00",
       "esta_ligado": true,
-      "data_cadastro": "2024-10-13T10:30:00-03:00",
-      "data_ultima_atualizacao": "2024-10-13T15:45:00-03:00",  // Se foi atualizado
+      "data_cadastro": "2025-10-17T08:30:00-03:00",
+      "data_ultima_atualizacao": "2025-10-17T10:30:00-03:00",  // Via sensor
       "alertas": {
         "pressao": "normal",
-        "temperatura_equipamento": "alto",
-        "temperatura_ambiente": "baixo",
-        "potencia": "normal"
+        "temperatura_equipamento": "normal",
+        "temperatura_ambiente": "normal",
+        "potencia": "normal",
+        "umidade": "alto",
+        "vibracao": "normal"
       },
-      "ultima_atualizacao_alertas": "2024-10-13T17:45:30-03:00"
+      "ultima_atualizacao_alertas": "2025-10-17T10:30:00-03:00"
     }
-    // ... mais compressores
+    // ... mais compressores com alertas dos 7 parâmetros
   ]
 }
 ```
@@ -256,9 +272,6 @@ Obtém informações detalhadas de um compressor específico.
     "data_cadastro": "2024-10-13T10:30:00-03:00",
     "alertas": {
       "pressao": "normal",
-      "temperatura_equipamento": "normal",
-      "temperatura_ambiente": "normal",
-      "potencia": "normal"
       "temperatura_equipamento": "alto",
       "temperatura_ambiente": "baixo"
     },
@@ -270,16 +283,18 @@ Obtém informações detalhadas de um compressor específico.
 ---
 
 ### ✏️ **PUT /compressores/{id_compressor}**
-Atualiza informações de um compressor existente.
+Atualiza informações de um compressor existente. O sistema automaticamente preserva os alertas e dados dos sensores associados.
 
 **Endpoint**: `PUT /compressores/{id_compressor}`
 
 **Body (JSON)** - Todos os campos são opcionais:
 ```json
 {
-  "nome_marca": "Atlas Copco GA75",
+  "nome_marca": "Atlas Copco GA30",
   "localizacao": "Setor B - Galpão 2",
-  "data_ultima_manutencao": "2024-10-01T14:00:00-03:00",
+  "potencia_nominal_kw": 30.0,
+  "configuracao": "Compressor Grande-Eficiente",
+  "data_ultima_manutencao": "2025-11-01T14:00:00-03:00",
   "esta_ligado": true
 }
 ```
@@ -292,12 +307,23 @@ Atualiza informações de um compressor existente.
   "compressor": {
     "firestore_id": "def456abc",
     "id_compressor": 1001,
-    "nome_marca": "Atlas Copco GA75",  // Atualizado
+    "nome_marca": "Atlas Copco GA30",  // Atualizado
     "localizacao": "Setor B - Galpão 2",  // Atualizado
-    "data_ultima_manutencao": "2024-10-01T14:00:00-03:00",
+    "potencia_nominal_kw": 30.0,  // Atualizado
+    "configuracao": "Compressor Grande-Eficiente",  // Atualizado
+    "data_ultima_manutencao": "2025-11-01T14:00:00-03:00",
     "esta_ligado": true,  // Atualizado
-    "data_cadastro": "2024-10-13T10:30:00-03:00",
-    "data_ultima_atualizacao": "2024-10-13T16:15:00-03:00"  // Automático
+    "data_cadastro": "2025-10-17T10:30:00-03:00",
+    "data_ultima_atualizacao": "2025-10-17T16:15:00-03:00",  // Automático
+    "alertas": {
+      "pressao": "normal",
+      "temperatura_equipamento": "normal",
+      "temperatura_ambiente": "normal",
+      "potencia": "normal",
+      "umidade": "normal",
+      "vibracao": "normal"
+    },
+    "ultima_atualizacao_alertas": "2025-10-17T15:30:00-03:00"
   }
 }
 ```
@@ -392,7 +418,10 @@ Informações detalhadas sobre o sistema de monitoramento.
     "pressao",
     "temperatura_equipamento", 
     "temperatura_ambiente",
-    "potencia"
+    "potencia_kw",
+    "umidade",
+    "vibracao",
+    "ligado"
   ],
   "niveis_alerta": [
     "muito_baixo",
@@ -448,6 +477,17 @@ O sistema utiliza uma escala de 5 níveis com "normal" no centro:
 - 🟢 **normal**: 15.0 - 37.0
 - 🟠 **alto**: 37.0 - 45.0
 - 🔴 **critico**: 45.0+
+
+#### Umidade (%)
+- 🔵 **muito_baixo**: 0.0 - 30.0
+- 🟡 **baixo**: 30.0 - 40.0
+- 🟢 **normal**: 40.0 - 60.0
+- 🟠 **alto**: 60.0 - 70.0
+- 🔴 **critico**: 70.0+
+
+#### Vibração (boolean)
+- 🟢 **normal**: false (sem vibração excessiva)
+- 🔴 **critico**: true (vibração excessiva detectada)
 
 ### 🔄 **Funcionamento do Sistema**
 1. **Coleta**: Sensor envia dados via `POST /sensor`
@@ -619,10 +659,10 @@ curl -X POST "http://localhost:8000/compressores/" \
   -H "Content-Type: application/json" \
   -d '{"id_compressor": 1001, "nome_marca": "Test", "localizacao": "Test Location"}'
 
-# Enviar dados sensor (4 parâmetros)
+# Enviar dados sensor (7 parâmetros)
 curl -X POST "http://localhost:8000/sensor" \
   -H "Content-Type: application/json" \
-  -d '{"id_compressor": 1001, "ligado": true, "pressao": 8.5, "temp_equipamento": 77.0, "temp_ambiente": 20.0, "potencia_kw": 22.0}'
+  -d '{"id_compressor": 1001, "ligado": true, "pressao": 8.5, "temp_equipamento": 77.0, "temp_ambiente": 20.0, "potencia_kw": 22.0, "umidade": 45.0, "vibracao": false}'
 ```
 
 ### Com JavaScript (Fetch):
@@ -631,16 +671,18 @@ curl -X POST "http://localhost:8000/sensor" \
 const compressores = await fetch('http://localhost:8000/compressores/?ativo_apenas=true')
   .then(res => res.json());
 
-// Exemplo de compressor com alertas (4 parâmetros):
+// Exemplo de compressor com alertas (7 parâmetros):
 compressores.compressores.forEach(comp => {
   console.log(`Compressor ${comp.id_compressor}:`);
-  console.log(`- Pressão: ${comp.alertas.pressao} �`);
+  console.log(`- Pressão: ${comp.alertas.pressao} 🟢`);
   console.log(`- Temp. Equipamento: ${comp.alertas.temperatura_equipamento} 🟢`);
   console.log(`- Temp. Ambiente: ${comp.alertas.temperatura_ambiente} 🟢`);
-  console.log(`- Potência: ${comp.alertas.potencia} �`);
+  console.log(`- Potência: ${comp.alertas.potencia} 🟢`);
+  console.log(`- Umidade: ${comp.alertas.umidade} 🟡`);
+  console.log(`- Vibração: ${comp.alertas.vibracao} 🟢`);
 });
 
-// Enviar dados do sensor (atualiza alertas automaticamente)
+// Enviar dados do sensor (atualiza alertas automaticamente) - 7 parâmetros
 const response = await fetch('http://localhost:8000/sensor', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -650,7 +692,9 @@ const response = await fetch('http://localhost:8000/sensor', {
     pressao: 8.5,  // Normal (7.0-10.0)
     temp_equipamento: 77.0,  // Normal (71.0-82.0)
     temp_ambiente: 20.0,  // Normal (10.0-29.0)
-    potencia_kw: 22.0  // Normal (15.0-37.0)
+    potencia_kw: 22.0,  // Normal (15.0-37.0)
+    umidade: 45.0,  // Normal (40.0-60.0)
+    vibracao: false  // Normal (false)
   })
 });
 
@@ -676,38 +720,44 @@ function renderizarAlertas(alertas) {
   ).join('\n');
 }
 
-// Usar nos dados do compressor (4 parâmetros)
+// Usar nos dados do compressor (7 parâmetros)
 const compressor = await fetch('/compressores/1001').then(r => r.json());
 console.log(renderizarAlertas(compressor.compressor.alertas));
-// Output: � pressao: normal
+// Output: 🟢 pressao: normal
 //         🟢 temperatura_equipamento: normal
-//         � temperatura_ambiente: normal
+//         🟢 temperatura_ambiente: normal
 //         🟢 potencia: normal
+//         🟡 umidade: baixo
+//         🟢 vibracao: normal
 ```
 
 ---
 
 ---
 
-## 🆕 **NOVIDADES NA VERSÃO 2.0.0 - Industrial**
+## 🆕 **NOVIDADES NA VERSÃO 2.0.0 - Industrial Plus**
 
-### ✨ **Sistema de Alertas Expandido - 4 Parâmetros**
-- **4 parâmetros monitorados**: pressão, temperatura_equipamento, temperatura_ambiente, **potencia**
+### ✨ **Sistema de Alertas Expandido - 7 Parâmetros**
+- **7 parâmetros monitorados**: pressão, temperatura_equipamento, temperatura_ambiente, potencia_kw, **umidade**, **vibracao**, ligado
 - **5 níveis**: muito_baixo, baixo, normal, alto, critico
 - **Avaliação automática** a cada envio de dados do sensor
 - **Integração completa** nas informações dos compressores
 - **Limites industriais** baseados em compressores médios (15-37 kW)
+- **Novos parâmetros**: Umidade ambiente (0-100%) e Vibração excessiva (boolean)
 
-### 🏭 **Especificações Industriais**
+### 🏭 **Especificações Industriais Avançadas**
 - **Compressores Médios**: Faixa 15-37 kW para uso industrial
 - **Limites Reais**: Baseados em especificações de Atlas Copco, Schulz, Ingersoll Rand
-- **Monitoramento de Potência**: Novo parâmetro `potencia_kw` para eficiência energética
+- **Monitoramento de Potência**: Parâmetro `potencia_kw` para eficiência energética
+- **Controle Ambiental**: Parâmetro `umidade` para condições do ambiente
+- **Detecção de Vibração**: Parâmetro `vibracao` para manutenção preditiva
 - **Configurações Otimizadas**: Limites ajustados para ambiente industrial real
 
 ### 🔄 **Fluxo Atualizado**
-1. `POST /sensor` → Sistema calcula alertas para **4 parâmetros** automaticamente
-2. `GET /compressores/{id}` → Retorna dados COM alertas dos 4 parâmetros atualizados
+1. `POST /sensor` → Sistema calcula alertas para **7 parâmetros** automaticamente
+2. `GET /compressores/{id}` → Retorna dados COM alertas dos 7 parâmetros atualizados
 3. `GET /configuracoes/` → Consulta limites industriais e configurações
+4. **Atualizações automáticas** → Status do compressor atualizado via dados de sensor
 
 ### 🎯 **Para Desenvolvedores**
 - Campo `alertas` com **4 parâmetros** sempre presente
@@ -717,149 +767,9 @@ console.log(renderizarAlertas(compressor.compressor.alertas));
 - Emojis sugeridos para interface: 🔵🟡🟢🟠🔴
 - Sistema totalmente automatizado com parâmetros industriais
 
-### 🖥️ **Integração com Frontend OFtech**
-A API está **100% compatível** com o sistema frontend desenvolvido:
-
-#### ✅ **Módulos Integrados**
-```javascript
-// ApiService - Integração completa
-const compressores = await apiService.getCompressores();
-const healthCheck = await apiService.checkHealth();
-const sensorData = await apiService.enviarDadosSensor(dados);
-
-// CompressorInterfaceManager - Renderização automática
-interface.extrairEficiencia(compressor);  // Usa campo 'eficiencia' da API
-interface.extrairTemperatura(compressor); // Usa 'temp_equipamento'
-interface.extrairPressao(compressor);     // Usa 'pressao'
-
-// Sistema de Alertas - Mapeamento direto
-alertas.pressao → 🔵🟡🟢🟠🔴
-alertas.temperatura_equipamento → Visual status
-alertas.temperatura_ambiente → Monitoramento ambiental
-alertas.potencia → Eficiência energética
-```
-
-#### 🔄 **Fluxo de Dados Automático**
-1. **Health Check**: `/health` → Detecta API disponível
-2. **Carregamento**: `/compressores/` → Popula interface dinamicamente  
-3. **Monitoramento**: `/dados/{id}` → Atualizações em tempo real
-4. **Fallback**: Dados mock se API indisponível
-
-#### 📊 **Compatibilidade de Campos**
-| Campo API | Campo Frontend | Uso |
-|-----------|---------------|-----|
-| `id_compressor` | `id` | Identificação única |
-| `nome_marca` | `nome` | Exibição nos cards |
-| `esta_ligado` | `status` | Online/Offline |
-| `localizacao` | `setor` (extraído) | Filtros por setor |
-| `alertas.*` | Indicadores visuais | Sistema de alertas |
-| `temp_equipamento` | `temperatura` | Monitoramento |
-| `pressao` | `pressao` | Dados técnicos |
-
----
-
-## 🛠️ **IMPLEMENTAÇÃO PRÁTICA - Dicas do Desenvolvimento**
-
-### 📋 **Checklist de Integração**
-
-#### ✅ **1. Health Check Automático**
-```javascript
-// Verificação inicial (implementado em app.js)
-async function verificarAPI() {
-  try {
-    const health = await fetch('http://localhost:8000/health');
-    return health.ok;
-  } catch {
-    return false; // Fallback para mock
-  }
-}
-```
-
-#### ✅ **2. Carregamento Dinâmico de Dados**
-```javascript
-// CompressorInterfaceManager (implementado)
-const response = await apiService.getCompressores();
-// Sistema extrai automaticamente:
-// - Setor de localizacao: "Setor A - Linha 1" → "Setor A"  
-// - Potência de nome_marca: "Atlas Copco GA22" → 22 kW
-// - Fabricante de nome_marca: "Atlas Copco GA22" → "Atlas Copco"
-```
-
-#### ✅ **3. Sistema de Alertas Visual**
-```javascript
-// Mapeamento implementado (compressor-interface.js)
-const statusConfig = {
-  'muito_baixo': { color: 'bg-blue-500', emoji: '🔵' },
-  'baixo': { color: 'bg-yellow-500', emoji: '🟡' },  
-  'normal': { color: 'bg-green-500', emoji: '🟢' },
-  'alto': { color: 'bg-orange-500', emoji: '🟠' },
-  'critico': { color: 'bg-red-500', emoji: '🔴' }
-};
-```
-
-#### ✅ **4. Filtros Inteligentes**
-```javascript
-// SearchFilterManager (implementado)
-// Filtra por atributos data-* extraídos automaticamente:
-element.setAttribute('data-fabricante', this.extrairFabricante(compressor.nome_marca));
-element.setAttribute('data-setor', this.extrairSetor(compressor.localizacao)); 
-element.setAttribute('data-alertas', this.hasAlertas(compressor.alertas));
-```
-
-#### ✅ **5. Event Delegation para Modais**
-```javascript
-// CompressorManager (implementado) 
-// Funciona com elementos criados dinamicamente da API
-document.addEventListener('click', (e) => {
-  if (e.target.closest('.compressor-card')) {
-    const id = e.target.closest('.compressor-card').dataset.compressorId;
-    abrirModal(id);
-  }
-});
-```
-
-### 🚀 **Performance e Otimização**
-
-#### ⚡ **Atualizações em Tempo Real**
-- **Health Check**: A cada 30s (`appConfig.updateInterval.healthCheck`)
-- **Dados de Compressores**: A cada 6s (`appConfig.updateInterval.statusUpdate`)  
-- **Gráficos**: A cada 5s (`appConfig.updateInterval.charts`)
-- **Dados de Sensores**: A cada 2s (`appConfig.updateInterval.realTimeData`)
-
-#### 📊 **Gestão de Estado**
-```javascript
-// config.js - Estado centralizado (implementado)
-export const appState = {
-  apiStatus: { isOnline: false, lastCheck: null },
-  currentMode: 'mock', // 'api' | 'hybrid' | 'mock'  
-  compressores: [],
-  healthCheckInterval: null
-};
-```
-
-### 🔧 **Troubleshooting**
-
-#### ❌ **Problemas Comuns e Soluções**
-
-1. **API não conecta**: Sistema usa fallback para mock automaticamente
-2. **Filtros não funcionam**: Event delegation implementado para elementos dinâmicos  
-3. **Modais não abrem**: Event delegation no documento, não nos elementos
-4. **Dados não aparecem**: Métodos de extração com fallbacks seguros implementados
-5. **CORS**: Use servidor local (python -m http.server) não file://
-
-#### 🏥 **Debug e Logs**
-```javascript
-// Logs detalhados implementados em todos os módulos
-console.log('🖥️ Inicializando CompressorInterfaceManager...');
-console.log(`✅ ${compressores.length} compressores carregados da API`);
-console.log('🔍 SearchFilter: Atualizando filtros após mudança na interface');
-console.log('📊 ChartManager: Dados atualizados em tempo real');
-```
-
 ---
 
 **🔧 Desenvolvido por: Ordem da Fenix**  
-**📅 Versão: 2.0.0**  
-**🕒 Atualizado em: 14/10/2025**  
-**🚨 Sistema de Alertas: Ativo com 4 Parâmetros**  
-**🔗 Frontend Integrado: Sistema híbrido API + Mock implementado**
+**📅 Versão: 1.1.0**  
+**🕒 Atualizado em: 13/10/2025**  
+**🚨 Sistema de Alertas: Ativo**
