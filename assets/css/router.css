@@ -1,0 +1,135 @@
+/* Router Styles - Hash Navigation System */
+
+/* Breadcrumb Navigation */
+#breadcrumb {
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#breadcrumb a {
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+#breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+/* Mobile-first responsive breadcrumb */
+@media (max-width: 640px) {
+    #breadcrumb {
+        font-size: 0.75rem;
+    }
+    
+    #breadcrumb .separator {
+        margin: 0 0.25rem;
+    }
+}
+
+/* View Transitions */
+#dashboard-view, #compressor-details-view {
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Back Button Enhancement */
+#back-to-dashboard {
+    transition: all 0.2s ease;
+    border-radius: 0.5rem;
+}
+
+#back-to-dashboard:hover {
+    background-color: #f3f4f6;
+    transform: translateX(-2px);
+}
+
+/* Mobile responsive for compressor details */
+@media (max-width: 768px) {
+    #compressor-details-view .bg-white {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        border-radius: 0;
+    }
+    
+    #compressor-details-view .grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #compressor-details-view .grid.lg\\:grid-cols-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    #compressor-details-view .grid.sm\\:grid-cols-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Horizontal scroll for mobile compressor list */
+#compressors-list-mobile {
+    /* Webkit scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #ea580c #f1f5f9;
+}
+
+#compressors-list-mobile::-webkit-scrollbar {
+    height: 4px;
+}
+
+#compressors-list-mobile::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 2px;
+}
+
+#compressors-list-mobile::-webkit-scrollbar-thumb {
+    background: #ea580c;
+    border-radius: 2px;
+}
+
+#compressors-list-mobile::-webkit-scrollbar-thumb:hover {
+    background: #c2410c;
+}
+
+/* Smooth scroll behavior */
+#compressors-list-mobile {
+    scroll-behavior: smooth;
+}
+
+/* Mobile compressor cards */
+.compressor.flex-shrink-0 {
+    min-height: 180px;
+    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.compressor.flex-shrink-0:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading states for views */
+.view-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.view-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #ea580c;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}

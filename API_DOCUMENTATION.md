@@ -6,8 +6,8 @@
 - **Timezone**: Brasil (UTC-3) - America/Sao_Paulo
 - **Formato de dados**: JSON
 - **Autenticação**: Não requerida
-- **Sistema de Alertas**: 7 parâmetros com 5 níveis integrados
-- **Monitoramento**: Tempo real com alertas automáticos e status do compressor
+- **Sistema de Alertas**: 3 níveis com ESP32 integrado
+- **Monitoramento**: Alertas pré-calculados pelo ESP32 e sensor tradicional
 - **CORS**: Configurado para GitHub Pages e desenvolvimento local
 
 ---
@@ -46,12 +46,11 @@ Recebe e armazena dados coletados pelos sensores dos compressores com **7 parâm
 - `data_medicao`: Opcional, preenchida automaticamente com timezone brasileiro
 
 **Funcionalidades Automáticas**:
-- ✅ **Atualização de Status**: Campo `esta_ligado` do compressor atualizado automaticamente
-- ✅ **Data de Atualização**: Campo `data_ultima_atualizacao` do compressor preenchido
-- ✅ **Sistema de Alertas**: Avalia automaticamente os 7 parâmetros
-- ✅ **5 Níveis**: muito_baixo 🔵, baixo 🟡, normal 🟢, alto 🟠, critico 🔴
-- ✅ **7 Parâmetros**: pressão, temperatura_equipamento, temperatura_ambiente, potencia, umidade, vibração
-- ✅ **Integração Completa**: Alertas salvos nas informações do compressor
+- ✅ **Sem Dados de Medição**: NÃO salva dados de sensores
+- ✅ **Apenas Alertas**: Atualiza somente os alertas no documento do compressor
+- ✅ **3 Níveis**: abaixo_do_normal �, normal 🟢, acima_do_normal �
+- ✅ **6 Parâmetros**: potência, pressão, temperatura_ambiente, temperatura_equipamento, umidade, vibração
+- ✅ **Integração Completa**: Alertas aplicados diretamente ao compressor
 
 **Respostas**:
 ```json
@@ -142,6 +141,80 @@ Busca dados de sensores de um compressor específico com todos os 7 parâmetros.
       "data_medicao": "2025-10-17T10:30:00-03:00"
     }
     // ... ordenados por data (mais recente primeiro)
+  ]
+}
+```
+
+---
+
+## 🤖 **ESP32** - Sistema de Alertas Inteligente
+
+### 📤 **POST /esp32/alertas**
+Atualiza apenas os alertas do compressor baseado nos dados pré-calculados pelo ESP32.
+
+**Endpoint**: `POST /esp32/alertas`
+
+**Body (JSON)** - Todos os campos obrigatórios:
+```json
+{
+  "id_compressor": 1001,
+  "alerta_potencia": "normal",
+  "alerta_pressao": "acima_do_normal",
+  "alerta_temperatura_ambiente": "normal",
+  "alerta_temperatura_equipamento": "acima_do_normal",
+  "alerta_umidade": "abaixo_do_normal",
+  "alerta_vibracao": "normal",
+  "data_medicao": "2025-10-20T10:30:00-03:00"  // Opcional
+}
+```
+
+**Validações**:
+- `id_compressor`: Inteiro positivo, deve existir no sistema
+- `alerta_potencia`: Enum ("abaixo_do_normal", "normal", "acima_do_normal")
+- `alerta_pressao`: Enum ("abaixo_do_normal", "normal", "acima_do_normal")
+- `alerta_temperatura_ambiente`: Enum ("abaixo_do_normal", "normal", "acima_do_normal")
+- `alerta_temperatura_equipamento`: Enum ("abaixo_do_normal", "normal", "acima_do_normal")
+- `alerta_umidade`: Enum ("abaixo_do_normal", "normal", "acima_do_normal")
+- `alerta_vibracao`: Enum ("abaixo_do_normal", "normal", "acima_do_normal")
+- `data_medicao`: Opcional, preenchida automaticamente com timezone brasileiro
+
+**Funcionalidades**:
+- ✅ **Atualização de Alertas**: Campo `alertas` do compressor atualizado
+- ✅ **Data de Atualização**: Campo `ultima_atualizacao_alertas` preenchido
+- ✅ **Sem Dados de Medição**: NÃO salva dados de sensores
+- ✅ **Apenas Alertas**: Atualiza somente os alertas no documento do compressor
+- ✅ **3 Níveis**: abaixo_do_normal 🟦, normal 🟢, acima_do_normal 🟠
+- ✅ **6 Parâmetros**: potência, pressão, temperatura_ambiente, temperatura_equipamento, umidade, vibração
+
+**Respostas**:
+```json
+// ✅ Sucesso (200)
+{
+  "id_compressor": 1001,
+  "alertas_atualizados": {
+    "potencia": "normal",
+    "pressao": "acima_do_normal",
+    "temperatura_ambiente": "normal",
+    "temperatura_equipamento": "acima_do_normal",
+    "umidade": "abaixo_do_normal",
+    "vibracao": "normal"
+  },
+  "data_atualizacao": "2025-10-20T10:30:00-03:00"
+}
+
+// ❌ Compressor não existe (404)
+{
+  "detail": "Compressor com ID 1001 não encontrado. Cadastre o compressor primeiro."
+}
+
+// ❌ Dados inválidos (422)
+{
+  "detail": [
+    {
+      "loc": ["body", "alerta_potencia"],
+      "msg": "value is not a valid enumeration member",
+      "type": "type_error.enum"
+    }
   ]
 }
 ```
@@ -437,63 +510,33 @@ Informações detalhadas sobre o sistema de monitoramento.
 
 ## 🚨 **SISTEMA DE ALERTAS** - Especificação Técnica
 
-### 🎯 **5 Níveis de Alerta**
-O sistema utiliza uma escala de 5 níveis com "normal" no centro:
+### 🎯 **3 Níveis de Alerta Simplificados**
+O sistema utiliza uma escala de 3 níveis com "normal" no centro:
 
 | Nível | Emoji | Cor | Descrição | Ação Recomendada |
 |-------|-------|-----|-----------|-------------------|
-| **muito_baixo** | 🔵 | Azul | Valores muito abaixo do ideal | Verificar funcionamento |
-| **baixo** | 🟡 | Amarelo | Valores abaixo do normal | Monitorar operação |
+| **abaixo_do_normal** | � | Azul | Valores abaixo do esperado | Verificar funcionamento |
 | **normal** | 🟢 | Verde | Operação dentro dos parâmetros | Nenhuma ação necessária |
-| **alto** | 🟠 | Laranja | Valores acima do normal | Atenção necessária |
-| **critico** | 🔴 | Vermelho | Valores críticos | Intervenção imediata |
+| **acima_do_normal** | 🟠 | Laranja | Valores acima do esperado | Monitoramento necessário |
 
-### 📐 **Limites por Parâmetro**
+### 🤖 **Sistema Duplo de Alertas**
 
-#### Pressão (bar)
-- 🔵 **muito_baixo**: 0.0 - 5.0
-- 🟡 **baixo**: 5.0 - 7.0
-- 🟢 **normal**: 7.0 - 10.0
-- 🟠 **alto**: 10.0 - 11.0
-- 🔴 **critico**: 11.0+
+#### **Sensor Tradicional (POST /sensor)**
+- **Automático**: Sistema calcula alertas baseado em valores recebidos
+- **7 parâmetros monitorados**: pressão, temperatura_equipamento, temperatura_ambiente, potencia_kw, umidade, vibracao, ligado
+- **Salva dados**: Armazena dados de medição + gera alertas automaticamente
+- **Atualiza status**: Atualiza `esta_ligado` do compressor
 
-#### Temperatura do Equipamento (°C)
-- 🔵 **muito_baixo**: 0.0 - 60.0
-- 🟡 **baixo**: 60.0 - 71.0
-- 🟢 **normal**: 71.0 - 82.0
-- 🟠 **alto**: 82.0 - 107.0
-- 🔴 **critico**: 107.0+ (desligamento automático: 110°C)
-
-#### Temperatura Ambiente (°C)
-- 🔵 **muito_baixo**: -10.0 - 0.0
-- 🟡 **baixo**: 0.0 - 10.0
-- 🟢 **normal**: 10.0 - 29.0
-- 🟠 **alto**: 29.0 - 46.0
-- 🔴 **critico**: 46.0+
-
-#### Potência/Consumo (kW)
-- 🔵 **muito_baixo**: 0.0 - 10.0
-- 🟡 **baixo**: 10.0 - 15.0
-- 🟢 **normal**: 15.0 - 37.0
-- 🟠 **alto**: 37.0 - 45.0
-- 🔴 **critico**: 45.0+
-
-#### Umidade (%)
-- 🔵 **muito_baixo**: 0.0 - 30.0
-- 🟡 **baixo**: 30.0 - 40.0
-- 🟢 **normal**: 40.0 - 60.0
-- 🟠 **alto**: 60.0 - 70.0
-- 🔴 **critico**: 70.0+
-
-#### Vibração (boolean)
-- 🟢 **normal**: false (sem vibração excessiva)
-- 🔴 **critico**: true (vibração excessiva detectada)
+#### **ESP32 (POST /esp32/alertas)**
+- **Pré-calculado**: ESP32 envia alertas já calculados
+- **6 parâmetros de alerta**: potência, pressão, temperatura_ambiente, temperatura_equipamento, umidade, vibração
+- **Apenas alertas**: NÃO salva dados de medição
+- **Atualização direta**: Atualiza somente os alertas do compressor
 
 ### 🔄 **Funcionamento do Sistema**
-1. **Coleta**: Sensor envia dados via `POST /sensor`
-2. **Avaliação**: Sistema calcula alertas baseado nos limites
-3. **Atualização**: Alertas são salvos nas informações do compressor
-4. **Consulta**: Próxima consulta ao compressor retorna alertas atualizados
+1. **Sensor Tradicional**: Envia dados → Sistema calcula alertas → Salva dados + alertas
+2. **ESP32**: Calcula alertas localmente → Envia apenas alertas → Atualiza compressor
+3. **Consulta**: `GET /compressores/{id}` retorna alertas atualizados de qualquer fonte
 
 ---
 
@@ -632,9 +675,10 @@ GET /configuracoes/  // Configurações de alertas
 - **4 Parâmetros Monitorados**: pressão, temperatura_equipamento, temperatura_ambiente, potencia
 - **Alertas Integrados**: Cada compressor possui campo `alertas` com status atual dos 4 parâmetros
 - **Atualização Automática**: Alertas são recalculados a cada `POST /sensor`
-- **5 Níveis Visuais**: Use emojis/cores para interface (🔵🟡🟢🟠🔴)
+- **3 Níveis Visuais**: Use emojis/cores para interface (�🟠)
 - **Timestamp**: Campo `ultima_atualizacao_alertas` mostra quando foram atualizados
-- **Limites Industriais**: Baseados em compressores médios (15-37 kW) para uso industrial
+- **Sistema Duplo**: Sensor tradicional (automático) + ESP32 (pré-calculado)
+- **Simplicidade**: 3 níveis mais intuitivos para monitoramento industrial
 
 ### 🏷️ **Headers Recomendados**
 ```
@@ -704,15 +748,13 @@ const config = await fetch('http://localhost:8000/configuracoes/')
 console.log('Limites:', config.configuracao.limites_pressao);
 ```
 
-### 🎨 **Exemplo de Interface com Alertas**:
+### 🎨 **Exemplo de Interface com Alertas (3 Níveis)**:
 ```javascript
 function renderizarAlertas(alertas) {
   const emojis = {
-    'muito_baixo': '🔵',
-    'baixo': '🟡', 
-    'normal': '🟢',
-    'alto': '🟠',
-    'critico': '🔴'
+    'abaixo_do_normal': '�',
+    'normal': '�',
+    'acima_do_normal': '�'
   };
   
   return Object.entries(alertas).map(([param, nivel]) => 
@@ -720,15 +762,30 @@ function renderizarAlertas(alertas) {
   ).join('\n');
 }
 
-// Usar nos dados do compressor (7 parâmetros)
+// Usar nos dados do compressor (6 parâmetros)
 const compressor = await fetch('/compressores/1001').then(r => r.json());
 console.log(renderizarAlertas(compressor.compressor.alertas));
 // Output: 🟢 pressao: normal
 //         🟢 temperatura_equipamento: normal
 //         🟢 temperatura_ambiente: normal
 //         🟢 potencia: normal
-//         🟡 umidade: baixo
+//         � umidade: abaixo_do_normal
 //         🟢 vibracao: normal
+
+// Enviar alertas do ESP32 (apenas alertas, sem dados)
+const responseESP32 = await fetch('http://localhost:8000/esp32/alertas', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    id_compressor: 1001,
+    alerta_potencia: "normal",
+    alerta_pressao: "acima_do_normal",
+    alerta_temperatura_ambiente: "normal",
+    alerta_temperatura_equipamento: "normal",
+    alerta_umidade: "abaixo_do_normal",
+    alerta_vibracao: "normal"
+  })
+});
 ```
 
 ---
@@ -737,13 +794,13 @@ console.log(renderizarAlertas(compressor.compressor.alertas));
 
 ## 🆕 **NOVIDADES NA VERSÃO 2.0.0 - Industrial Plus**
 
-### ✨ **Sistema de Alertas Expandido - 7 Parâmetros**
-- **7 parâmetros monitorados**: pressão, temperatura_equipamento, temperatura_ambiente, potencia_kw, **umidade**, **vibracao**, ligado
-- **5 níveis**: muito_baixo, baixo, normal, alto, critico
-- **Avaliação automática** a cada envio de dados do sensor
-- **Integração completa** nas informações dos compressores
-- **Limites industriais** baseados em compressores médios (15-37 kW)
-- **Novos parâmetros**: Umidade ambiente (0-100%) e Vibração excessiva (boolean)
+### ✨ **Sistema de Alertas Expandido - 3 Níveis Simplificados**
+- **Sistema Duplo**: Sensor tradicional (cálculo automático) + ESP32 (alertas pré-calculados)
+- **3 níveis**: abaixo_do_normal, normal, acima_do_normal
+- **Integração ESP32** para alertas em tempo real calculados no dispositivo
+- **Compatibilidade total** com sensores tradicionais
+- **6 parâmetros de alerta ESP32**: potência, pressão, temperatura_ambiente, temperatura_equipamento, umidade, vibração
+- **7 parâmetros sensor tradicional**: + dados de medição completos
 
 ### 🏭 **Especificações Industriais Avançadas**
 - **Compressores Médios**: Faixa 15-37 kW para uso industrial
@@ -764,12 +821,12 @@ console.log(renderizarAlertas(compressor.compressor.alertas));
 - Campo `potencia_kw` obrigatório no modelo SensorData
 - Campo `potencia_nominal_kw` nos compressores (15-37 kW)
 - Campo `ultima_atualizacao_alertas` para controle temporal
-- Emojis sugeridos para interface: 🔵🟡🟢🟠🔴
-- Sistema totalmente automatizado com parâmetros industriais
+- Emojis sugeridos para interface: �🟠 (3 níveis)
+- Sistema totalmente automatizado com ESP32 + sensor tradicional
 
 ---
 
 **🔧 Desenvolvido por: Ordem da Fenix**  
-**📅 Versão: 1.1.0**  
-**🕒 Atualizado em: 13/10/2025**  
-**🚨 Sistema de Alertas: Ativo**
+**📅 Versão: 2.0.0**  
+**🕒 Atualizado em: 20/10/2025**  
+**🚨 Sistema de Alertas: ESP32 + Sensor Tradicional (3 Níveis)**

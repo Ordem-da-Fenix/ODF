@@ -5,14 +5,19 @@
 
 import { apiService } from '../../data/api.js';
 import { appConfig, appState, configUtils } from '../../data/config.js';
+import { router } from './router.js';
 
 export class CompressorInterfaceManager {
     constructor(apiStatus = true) {
+        // Múltiplos containers para diferentes layouts
         this.compressorsList = document.getElementById('compressors-list');
+        this.compressorsListDesktop = document.getElementById('compressors-list-desktop');
+        this.compressorsListMobile = document.getElementById('compressors-list-mobile');
         this.resultsCount = document.getElementById('results-count');
         this.compressores = [];
         this.useApi = apiStatus; // Recebe status da API já verificado
         this.alertasAnteriores = null; // Cache para monitorar mudanças nos alertas
+        this.isMobile = window.innerWidth < 1024; // Breakpoint lg do Tailwind
 
         this.init();
     }
@@ -32,7 +37,30 @@ export class CompressorInterfaceManager {
         // Configurar atualização automática dos status
         this.setupAutoStatusUpdate();
 
+        // Listener para redimensionamento
+        this.setupResizeListener();
+
         console.log(`✅ Interface carregada com ${this.compressores.length} compressores`);
+    }
+
+    /**
+     * Configura listener para redimensionamento da janela
+     */
+    setupResizeListener() {
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const wasMobile = this.isMobile;
+                this.isMobile = window.innerWidth < 1024;
+                
+                // Re-renderizar se o layout mudou
+                if (wasMobile !== this.isMobile) {
+                    console.log(`📱 Layout alterado: ${this.isMobile ? 'Mobile' : 'Desktop'}`);
+                    this.renderCompressores();
+                }
+            }, 250);
+        });
     }
 
 
@@ -95,19 +123,41 @@ export class CompressorInterfaceManager {
      * Renderiza lista de compressores na interface
      */
     renderCompressores() {
-        if (!this.compressorsList) {
-            console.error('Elemento compressors-list não encontrado');
-            return;
-        }
+        // Detectar tamanho da tela atual
+        this.isMobile = window.innerWidth < 1024;
+        
+        console.log(`📱 Renderizando ${this.compressores.length} compressores (Mobile: ${this.isMobile})`);
 
-        // Limpar lista atual
-        this.compressorsList.innerHTML = '';
+        // Limpar todas as listas
+        if (this.compressorsList) this.compressorsList.innerHTML = '';
+        if (this.compressorsListDesktop) this.compressorsListDesktop.innerHTML = '';
+        if (this.compressorsListMobile) this.compressorsListMobile.innerHTML = '';
+
+        // Escolher container apropriado
+        const targetContainer = this.isMobile ? this.compressorsListMobile : this.compressorsListDesktop;
+        
+        if (!targetContainer) {
+            // Fallback para lista tradicional
+            console.warn('⚠️ Container apropriado não encontrado, usando fallback');
+            if (this.compressorsList) {
+                this.compressorsList.style.display = 'block';
+            }
+            return this.renderCompressoresFallback();
+        }
 
         // Renderizar cada compressor
         this.compressores.forEach(compressor => {
-            const compressorElement = this.createCompressorElement(compressor);
-            this.compressorsList.appendChild(compressorElement);
+            const compressorElement = this.createCompressorElement(compressor, this.isMobile);
+            targetContainer.appendChild(compressorElement);
         });
+
+        // Ocultar indicador de scroll se houver poucos itens no mobile
+        if (this.isMobile && this.compressores.length <= 1) {
+            const scrollIndicator = document.querySelector('.flex.justify-center.mt-2');
+            if (scrollIndicator) {
+                scrollIndicator.style.display = 'none';
+            }
+        }
 
         // Atualizar contador
         this.updateResultsCount();
@@ -120,15 +170,39 @@ export class CompressorInterfaceManager {
             if (window.searchFilterManager) {
                 window.searchFilterManager.onCompressorsUpdated();
             }
-        }, 100); // Pequeno delay para garantir que o DOM foi atualizado
+        }, 100);
+    }
+
+    /**
+     * Renderiza compressores no modo fallback (lista tradicional)
+     */
+    renderCompressoresFallback() {
+        if (!this.compressorsList) return;
+
+        this.compressores.forEach(compressor => {
+            const compressorElement = this.createCompressorElement(compressor, false);
+            this.compressorsList.appendChild(compressorElement);
+        });
+
+        this.updateResultsCount();
+        this.setupCompressorEventListeners();
     }
 
     /**
      * Cria elemento HTML para um compressor baseado apenas na API
      */
-    createCompressorElement(compressor) {
+    createCompressorElement(compressor, isMobile = false) {
         const div = document.createElement('div');
-        div.className = 'compressor flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-200';
+        
+        // Classes base
+        const baseClasses = 'compressor border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all duration-200 hover:shadow-md';
+        
+        // Classes específicas para mobile/desktop
+        if (isMobile) {
+            div.className = `${baseClasses} flex-shrink-0 w-72 sm:w-80 p-4 bg-white shadow-sm`;
+        } else {
+            div.className = `${baseClasses} flex items-center p-4`;
+        }
 
         // Extrair dados da API (sempre)
         const potenciaAtual = this.extrairPotenciaApi(compressor.apiData);
@@ -165,24 +239,139 @@ export class CompressorInterfaceManager {
         // Status indicator
         const statusConfig = this.getStatusConfig(compressor.status, compressor.alertas);
 
-        div.innerHTML = `
-            <span class="w-3 h-3 ${statusConfig.bgColor} rounded-full mr-3 ${statusConfig.animation}"></span>
-            <div class="flex-1">
-                <div class="flex items-start justify-between">
+        if (isMobile) {
+            // Layout vertical para mobile (card format)
+            div.innerHTML = `
+                <div class="flex flex-col h-full">
+                    <!-- Header do Card -->
+                    <div class="flex items-center mb-3">
+                        <span class="w-3 h-3 ${statusConfig.bgColor} rounded-full mr-2 ${statusConfig.animation}"></span>
+                        <span class="text-sm font-semibold text-gray-800 truncate">${dadosCompressor.nome}</span>
+                    </div>
+                    
+                    <!-- Métricas principais -->
                     <div class="flex-1">
-                        <span class="text-lg font-medium text-gray-800">${dadosCompressor.nome}</span>
-                        <div class="text-sm text-gray-500 mt-1">
-                            ${this.buildCompressorInfo(compressor, dadosCompressor)}
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            ${this.buildMobileMetrics(compressor, dadosCompressor)}
                         </div>
-                        <div class="flex items-center gap-4 mt-2 text-xs text-gray-600">
-                            ${this.buildStatusInfo(compressor, dadosCompressor)}
+                        
+                        <!-- Status info -->
+                        <div class="text-xs text-gray-600 space-y-1">
+                            ${this.buildMobileStatusInfo(compressor, dadosCompressor)}
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="mt-3 pt-2 border-t border-gray-100">
+                        <div class="text-xs text-gray-500">
+                            ${this.buildCompressorInfo(compressor, dadosCompressor)}
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // Layout horizontal para desktop (original)
+            div.innerHTML = `
+                <span class="w-3 h-3 ${statusConfig.bgColor} rounded-full mr-3 ${statusConfig.animation}"></span>
+                <div class="flex-1">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <span class="text-lg font-medium text-gray-800">${dadosCompressor.nome}</span>
+                            <div class="text-sm text-gray-500 mt-1">
+                                ${this.buildCompressorInfo(compressor, dadosCompressor)}
+                            </div>
+                            <div class="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                                ${this.buildStatusInfo(compressor, dadosCompressor)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         return div;
+    }
+
+    /**
+     * Constrói métricas para layout mobile (formato de grid)
+     */
+    buildMobileMetrics(compressor, dadosCompressor) {
+        const metrics = [];
+
+        // Pressão
+        if (dadosCompressor.pressao !== undefined && dadosCompressor.pressao !== null) {
+            const nivel = this.calcularNivelAlerta('pressao', dadosCompressor.pressao);
+            const cor = appConfig.alertas.pressao[nivel]?.cor || 'gray';
+            metrics.push(`
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Pressão</div>
+                    <div class="text-sm font-semibold text-${cor}-600">${dadosCompressor.pressao.toFixed(1)}bar</div>
+                </div>
+            `);
+        }
+
+        // Temperatura
+        if (dadosCompressor.temperatura !== undefined && dadosCompressor.temperatura !== null) {
+            const nivel = this.calcularNivelAlerta('temp_equipamento', dadosCompressor.temperatura);
+            const cor = nivel === 'normal' ? 'green' : (nivel === 'critico' ? 'red' : 'orange');
+            metrics.push(`
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Temp.</div>
+                    <div class="text-sm font-semibold text-${cor}-600">${dadosCompressor.temperatura.toFixed(1)}°C</div>
+                </div>
+            `);
+        }
+
+        // Potência
+        if (dadosCompressor.potenciaAtual !== undefined && dadosCompressor.potenciaAtual !== null) {
+            metrics.push(`
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Potência</div>
+                    <div class="text-sm font-semibold text-oftech-orange">${dadosCompressor.potenciaAtual.toFixed(1)}kW</div>
+                </div>
+            `);
+        }
+
+        // Umidade (se disponível)
+        if (dadosCompressor.umidade !== undefined && dadosCompressor.umidade !== null) {
+            const nivel = this.calcularNivelAlerta('umidade', dadosCompressor.umidade);
+            const emoji = appConfig.alertas.umidade[nivel]?.emoji || '💧';
+            metrics.push(`
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Umidade</div>
+                    <div class="text-sm font-semibold text-blue-600">${emoji} ${dadosCompressor.umidade.toFixed(1)}%</div>
+                </div>
+            `);
+        }
+
+        return metrics.join('');
+    }
+
+    /**
+     * Constrói informações de status para mobile (formato compacto)
+     */
+    buildMobileStatusInfo(compressor, dadosCompressor) {
+        const items = [];
+
+        // Status de funcionamento
+        if (compressor.status === 'ligado') {
+            items.push('<span class="text-green-600">● Operando</span>');
+        } else {
+            items.push('<span class="text-red-600">● Parado</span>');
+        }
+
+        // Vibração (se crítica)
+        if (dadosCompressor.vibracao === true) {
+            items.push('<span class="text-red-600">⚠️ Vibração</span>');
+        }
+
+        // Alertas gerais
+        const alertasInfo = this.getAlertasInfo(compressor.alertas);
+        if (alertasInfo) {
+            items.push(`<span class="text-orange-600">${alertasInfo}</span>`);
+        }
+
+        return items.join('<br>');
     }
 
     /**
@@ -604,23 +793,41 @@ export class CompressorInterfaceManager {
      * Configura event listeners para os compressores
      */
     setupCompressorEventListeners() {
-        const compressorElements = this.compressorsList.querySelectorAll('.compressor');
+        // Buscar elementos compressor em todos os containers
+        const containers = [
+            this.compressorsList,
+            this.compressorsListDesktop, 
+            this.compressorsListMobile
+        ].filter(container => container); // Filtrar apenas containers válidos
 
-        compressorElements.forEach(element => {
-            // Remover listeners anteriores
-            element.replaceWith(element.cloneNode(true));
-        });
+        containers.forEach(container => {
+            const compressorElements = container.querySelectorAll('.compressor');
 
-        // Adicionar novos listeners
-        const newElements = this.compressorsList.querySelectorAll('.compressor');
-        newElements.forEach(element => {
-            element.addEventListener('click', () => {
-                const compressorId = element.getAttribute('data-id');
+            compressorElements.forEach(element => {
+                // Remover listeners anteriores
+                element.replaceWith(element.cloneNode(true));
+            });
 
-                // Disparar evento para outros módulos
-                window.dispatchEvent(new CustomEvent('compressorSelected', {
-                    detail: { compressorId }
-                }));
+            // Adicionar novos listeners
+            const newElements = container.querySelectorAll('.compressor');
+            newElements.forEach(element => {
+                element.addEventListener('click', () => {
+                    const compressorId = element.getAttribute('data-id');
+                    
+                    // Navegar para página de detalhes usando router
+                    router.navigate(`/compressor/${compressorId}`);
+                    
+                    console.log(`🔗 Navegando para compressor ${compressorId}`);
+                });
+
+                // Adicionar também evento para teclado (acessibilidade)
+                element.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        const compressorId = element.getAttribute('data-id');
+                        router.navigate(`/compressor/${compressorId}`);
+                    }
+                });
             });
         });
     }

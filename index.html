@@ -19,6 +19,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="assets/css/router.css">
 </head>
 
 <body class="bg-gray-50 font-sans">
@@ -113,27 +114,40 @@
     <!-- Overlay para fechar o painel -->
     <div id="notifications-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden"></div>
 
-    <div class="w-full max-w-none mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-lg p-6 mx-auto" style="width: 85%; max-width: 90%">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6">Compressores</h3>
+    <!-- Breadcrumb Navigation -->
+    <nav class="bg-white border-b border-gray-200">
+        <div class="w-full max-w-none mx-auto px-4 py-4">
+            <div id="breadcrumb" class="text-sm text-gray-600">
+                <!-- Breadcrumb será preenchido pelo router -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="w-full max-w-none mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        
+        <!-- Dashboard View -->
+        <div id="dashboard-view" style="display: block;">
+            <div class="bg-white rounded-lg shadow-lg p-3 sm:p-6 mx-auto w-full max-w-7xl">
+                <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 mb-6 sm:mb-8">Compressores</h3>
 
             <!-- Barra de Pesquisa e Filtros -->
-            <div class="mb-6 space-y-4">
+            <div class="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
                 <!-- Linha de Pesquisa -->
-                <div class="flex flex-col sm:flex-row gap-3">
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <div class="flex-1 relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                         <input type="text" id="search-compressors"
-                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-oftech-orange focus:border-oftech-orange"
-                            placeholder="Pesquisar compressores por nome ou ID...">
+                            class="block w-full pl-8 sm:pl-10 pr-3 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-oftech-orange focus:border-oftech-orange"
+                            placeholder="Pesquisar compressores...">
                     </div>
                     <button id="advanced-filters-toggle"
-                        class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center gap-2">
+                        class="px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z">
@@ -238,118 +252,184 @@
                 </div>
 
                 <!-- Contador de Resultados -->
-                <div class="flex items-center justify-between text-sm text-gray-600">
+                <div class="flex items-center justify-between text-xs sm:text-sm text-gray-600">
                     <span id="results-count">Carregando compressores...</span>
-                    <button id="export-results" class="text-oftech-orange hover:text-oftech-dark transition-colors">
+                    <button id="export-results" class="text-oftech-orange hover:text-oftech-dark transition-colors hidden sm:block">
                         Exportar resultados
+                    </button>
+                    <button id="export-results-mobile" class="text-oftech-orange hover:text-oftech-dark transition-colors sm:hidden">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
 
-            <div class="space-y-3" id="compressors-list">
-                <!-- Compressores serão carregados dinamicamente via API -->
-                <div class="flex items-center justify-center py-8 text-gray-500">
-                    <div class="text-center">
-                        <svg class="w-8 h-8 mx-auto mb-3 animate-spin text-oftech-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            <!-- Container da Lista de Compressores - Mobile First -->
+            <div class="w-full">
+                <!-- Desktop: Lista vertical -->
+                <div class="hidden lg:block space-y-3" id="compressors-list-desktop">
+                    <!-- Compressores serão carregados dinamicamente via API -->
+                </div>
+                
+                <!-- Mobile/Tablet: Scroll horizontal -->
+                <div class="lg:hidden">
+                    <div class="flex overflow-x-auto pb-4 gap-4" id="compressors-list-mobile">
+                        <!-- Compressores serão carregados dinamicamente via API -->
+                        <div class="flex items-center justify-center py-8 text-gray-500 w-full">
+                            <div class="text-center">
+                                <svg class="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-3 animate-spin text-oftech-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                <p class="text-xs sm:text-sm">Carregando compressores...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scroll indicators for mobile -->
+                    <div class="flex justify-center mt-2">
+                        <div class="flex items-center gap-1 text-gray-400 text-xs">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
+                            </svg>
+                            <span>Deslize para ver mais</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Fallback: Lista tradicional como backup -->
+                <div class="space-y-3" id="compressors-list" style="display: none;">
+                    <!-- Compressores serão carregados dinamicamente via API -->
+                    <div class="flex items-center justify-center py-8 text-gray-500">
+                        <div class="text-center">
+                            <svg class="w-8 h-8 mx-auto mb-3 animate-spin text-oftech-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            <p class="text-sm">Carregando compressores...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        <!-- End Dashboard View -->
+
+        <!-- Compressor Details View -->
+        <div id="compressor-details-view" style="display: none;">
+            <div class="bg-white rounded-none sm:rounded-lg shadow-lg p-3 sm:p-6 lg:p-8 mx-auto w-full max-w-7xl">
+                <!-- Header with Back Button -->
+                <div class="flex items-center justify-between mb-6 sm:mb-8">
+                    <div class="flex items-center gap-3 sm:gap-4">
+                        <button id="back-to-dashboard" class="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Voltar ao Dashboard (ESC)">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+                        <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">
+                            Compressor <span id="compressor-id" class="text-oftech-orange"></span>
+                        </h2>
+                    </div>
+                    <button id="share-compressor" class="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-oftech-orange transition-colors" title="Compartilhar Link">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
                         </svg>
-                        <p class="text-sm">Carregando compressores...</p>
+                        <span class="text-sm">Compartilhar</span>
+                    </button>
+                </div>
+
+                <!-- Métricas Principais -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div id="card-pressao" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange hover:shadow-lg transition-all">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Pressão</h3>
+                        <p id="pressao" class="text-3xl font-bold text-oftech-orange">0 bar</p>
+                    </div>
+                    <div id="card-temperatura" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 hover:shadow-lg transition-all">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Temperatura</h3>
+                        <p id="temperatura" class="text-3xl font-bold text-red-600">0 °C</p>
+                    </div>
+                    <div id="card-consumo" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange hover:shadow-lg transition-all">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Consumo</h3>
+                        <p id="consumo-energia" class="text-3xl font-bold text-oftech-orange">0 kW</p>
+                    </div>
+                </div>
+
+                <!-- Métricas Ambientais - Melhor Layout Mobile -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                    <div id="card-umidade" class="bg-gray-50 p-6 rounded-lg text-center border border-blue-200">
+                        <div class="flex items-center justify-center mb-2">
+                            <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 3V1m0 18v2m8-10a4 4 0 00-4-4H9a2 2 0 00-2 2v8a4 4 0 004 4h2a4 4 0 004-4V7a2 2 0 00-2-2z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Umidade</h3>
+                        </div>
+                        <p id="umidade" class="text-3xl font-bold text-blue-600">0%</p>
+                        <p class="text-sm text-gray-500 mt-1">Ambiente</p>
+                    </div>
+                    <div id="card-vibracao" class="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
+                        <div class="flex items-center justify-center mb-2">
+                            <svg class="w-6 h-6 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Vibração</h3>
+                        </div>
+                        <p id="vibracao" class="text-2xl font-bold text-gray-600">Normal</p>
+                        <p class="text-sm text-gray-500 mt-1">Equipamento</p>
+                    </div>
+                </div>
+
+                <!-- Informações Adicionais -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20">
+                        <div class="flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-oftech-orange mr-2" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Funcionamento</h3>
+                        </div>
+                        <p id="tempo-funcionamento" class="text-2xl font-bold text-oftech-orange">--</p>
+                        <p class="text-sm text-gray-500 mt-1">Status atual</p>
+                    </div>
+
+                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-red-200">
+                        <div class="flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                </path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Temperatura Ambiente</h3>
+                        </div>
+                        <p id="temperatura-ambiente" class="text-2xl font-bold text-red-600">-- °C</p>
+                        <p class="text-sm text-gray-500 mt-1">Sensor local</p>
+                    </div>
+                </div>
+
+                <!-- Gráfico em Tela Cheia -->
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="h-96 lg:h-[500px]">
+                        <canvas id="graficoEnergia" class="w-full h-full"></canvas>
                     </div>
                 </div>
             </div>
         </div>
+        <!-- End Compressor Details View -->
+
     </div>
+    <!-- End Main Content Container -->
 
-    <!-- Modal de detalhes do compressor -->
-    <div id="modal-detalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto relative">
-            <span
-                class="close absolute top-4 right-6 text-2xl font-bold text-gray-500 hover:text-gray-700 cursor-pointer">&times;</span>
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">
-                Detalhes do Compressor <span id="compressor-id" class="text-oftech-orange"></span>
-            </h2>
-
-            <!-- Métricas Principais -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div id="card-pressao" role="button" tabindex="0"
-                    class="bg-white p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Pressão</h3>
-                    <p id="pressao" class="text-3xl font-bold text-oftech-orange">0 bar</p>
-                </div>
-                <div id="card-temperatura" role="button" tabindex="0"
-                    class="bg-white p-6 rounded-lg text-center border border-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Temperatura</h3>
-                    <p id="temperatura" class="text-3xl font-bold text-red-600">0 °C</p>
-                </div>
-                <div id="card-consumo" role="button" tabindex="0"
-                    class="bg-white p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Consumo</h3>
-                    <p id="consumo-energia" class="text-3xl font-bold text-oftech-orange">0 kW</p>
-                </div>
-            </div>
-
-            <!-- Métricas Ambientais - NOVIDADES (Não clicáveis) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div id="card-umidade" class="bg-white p-6 rounded-lg text-center border border-blue-200">
-                    <div class="flex items-center justify-center mb-2">
-                        <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 3V1m0 18v2m8-10a4 4 0 00-4-4H9a2 2 0 00-2 2v8a4 4 0 004 4h2a4 4 0 004-4V7a2 2 0 00-2-2z"></path>
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-800">Umidade</h3>
-                    </div>
-                    <p id="umidade" class="text-3xl font-bold text-blue-600">0%</p>
-                    <p class="text-sm text-gray-500 mt-1">Ambiente</p>
-                </div>
-                <div id="card-vibracao" class="bg-white p-6 rounded-lg text-center border border-gray-200">
-                    <div class="flex items-center justify-center mb-2">
-                        <svg class="w-6 h-6 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-800">Vibração</h3>
-                    </div>
-                    <p id="vibracao" class="text-2xl font-bold text-gray-600">Normal</p>
-                    <p class="text-sm text-gray-500 mt-1">Equipamento</p>
-                </div>
-            </div>
-
-            <!-- Informações Adicionais -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-lg text-center border border-oftech-orange/20">
-                    <div class="flex items-center justify-center mb-3">
-                        <svg class="w-6 h-6 text-oftech-orange mr-2" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-800">Funcionamento</h3>
-                    </div>
-                    <p id="tempo-funcionamento" class="text-2xl font-bold text-oftech-orange">--</p>
-                    <p class="text-sm text-gray-500 mt-1">Status atual</p>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg text-center border border-red-200">
-                    <div class="flex items-center justify-center mb-3">
-                        <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        <h3 class="text-lg font-semibold text-gray-800">Temperatura Ambiente</h3>
-                    </div>
-                    <p id="temperatura-ambiente" class="text-2xl font-bold text-red-600">-- °C</p>
-                    <p class="text-sm text-gray-500 mt-1">Sensor local</p>
-                </div>
-            </div>
-
-            <div class="bg-gray-50 p-4 rounded-lg">
-
-                <div class="h-96">
-                    <canvas id="graficoEnergia" class="w-full h-full"></canvas>
-                </div>
-            </div>
-        </div>
+    <!-- Modal de detalhes do compressor (DEPRECATED - será removido) -->
+    <div id="modal-detalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center" style="display: none !important;">
+        <!-- Modal content disabled for router migration -->
     </div>
 
     <script type="module" src="src/js/app.js"></script>

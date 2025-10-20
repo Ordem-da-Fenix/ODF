@@ -34,56 +34,78 @@ export class CompressorManager {
 
 
     setupEventListeners() {
-        // Usar delegação de eventos para elementos dinâmicos
-        const compressorsList = document.getElementById('compressors-list');
-        if (compressorsList) {
-            compressorsList.addEventListener('click', (event) => {
-                // Encontrar o elemento compressor clicado
-                const compressorElement = event.target.closest('.compressor');
-                if (compressorElement) {
-                    const compressorId = compressorElement.getAttribute('data-id');
-                    if (compressorId) {
-                        this.abrirModal(compressorId);
-                    }
-                }
-            });
-            console.log('✅ Event listeners configurados via delegação');
-        }
+        // Escutar eventos do router para atualizar dados do compressor
+        window.addEventListener('routeChanged', (event) => {
+            const { route, view, compressorId } = event.detail;
+            
+            if (view === 'compressor-details' && compressorId) {
+                console.log(`🔧 Router: Navegando para compressor ${compressorId}`);
+                this.inicializarDetalhes(compressorId);
+            }
+        });
+        
+        // Escutar evento de compressor selecionado (compatibilidade)
+        window.addEventListener('compressorSelected', (event) => {
+            const { compressorId } = event.detail;
+            if (compressorId) {
+                console.log(`🔧 Evento compressorSelected: ${compressorId}`);
+                this.inicializarDetalhes(compressorId);
+            }
+        });
+        
+        console.log('🔧 CompressorManager: Event listeners configurados para router');
     }
 
     abrirModal(compressorId) {
-        this.compressorIdElement.textContent = compressorId;
-        this.modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        
-        // Disparar evento customizado para outros módulos
-        window.dispatchEvent(new CustomEvent('compressorSelected', {
-            detail: { compressorId }
-        }));
-        
-        // Iniciar atualização em tempo real
-        this.atualizarDadosTempoReal();
-        
-        // Limpar intervalos anteriores
-        if (this.intervaloDados) {
-            clearInterval(this.intervaloDados);
-        }
-        
-        // Criar novo intervalo baseado na configuração do modal (1 minuto)
-        this.intervaloDados = setInterval(() => {
-            this.atualizarDadosTempoReal();
-        }, appConfig.updateInterval.modalData);
+        // DEPRECATED: Modal não é mais usado
+        // Este método é mantido para compatibilidade, mas não faz mais nada
+        console.log(`🔧 CompressorManager.abrirModal(${compressorId}) - DEPRECATED`);
     }
 
-    fecharModal() {
-        this.modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
+    /**
+     * Inicializa a view de detalhes do compressor
+     * Chamado pelo router quando navega para /compressor/:id
+     */
+    inicializarDetalhes(compressorId) {
+        console.log(`🔧 Inicializando detalhes do compressor: ${compressorId}`);
         
-        // Limpar intervalo de atualização
+        // Verificar se o ID é válido
+        if (!compressorId || isNaN(parseInt(compressorId))) {
+            console.error(`❌ ID inválido: ${compressorId}`);
+            return;
+        }
+        
+        // Atualizar elemento HTML com o ID
+        if (this.compressorIdElement) {
+            this.compressorIdElement.textContent = compressorId;
+        }
+        
+        // Limpar intervalo anterior se existir
         if (this.intervaloDados) {
             clearInterval(this.intervaloDados);
             this.intervaloDados = null;
         }
+        
+        // Iniciar atualização em tempo real
+        this.atualizarDadosTempoReal();
+        
+        // Configurar intervalo de atualização
+        this.intervaloDados = setInterval(() => {
+            this.atualizarDadosTempoReal();
+        }, appConfig.updateInterval.modalData);
+        
+        console.log(`✅ Detalhes do compressor ${compressorId} inicializados`);
+    }
+
+    fecharModal() {
+        // DEPRECATED: Modal não é mais usado
+        // Apenas limpar intervalo de dados se existir
+        if (this.intervaloDados) {
+            clearInterval(this.intervaloDados);
+            this.intervaloDados = null;
+        }
+        
+        console.log('🔧 CompressorManager.fecharModal() - DEPRECATED');
     }
 
     async atualizarDadosTempoReal() {

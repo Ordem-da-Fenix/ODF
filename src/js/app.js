@@ -10,11 +10,13 @@ import { ModalManager } from './modules/modal.js';
 import { NotificationManager } from './modules/notifications.js';
 import { SearchFilterManager } from './modules/search-filter.js';
 import { Utils } from './modules/utils.js';
+import { router } from './modules/router.js';
 import { appConfig, appState, configUtils } from '../data/config.js';
 import { apiService } from '../data/api.js';
 
 class OFtechApp {
     constructor() {
+        this.router = router;
         this.compressorManager = null;
         this.compressorInterfaceManager = null;
         this.chartManager = null;
@@ -338,6 +340,9 @@ class OFtechApp {
     }
 
     setupModuleEvents() {
+        // Event listeners do Router
+        this.setupRouterEvents();
+        
         // Evento de modal fechado - parar atualizações do gráfico
         window.addEventListener('modalClosed', (event) => {
             if (event.detail.modalType === 'compressor') {
@@ -604,6 +609,105 @@ class OFtechApp {
         this.isInitialized = false;
         
         console.log('✅ Cleanup concluído');
+    }
+
+    /**
+     * Configura event listeners específicos do router
+     */
+    setupRouterEvents() {
+        // Botão voltar na página de detalhes
+        const backButton = document.getElementById('back-to-dashboard');
+        if (backButton) {
+            backButton.addEventListener('click', () => {
+                this.router.navigate('/');
+            });
+        }
+
+        // Botão compartilhar na página de detalhes
+        const shareButton = document.getElementById('share-compressor');
+        if (shareButton) {
+            shareButton.addEventListener('click', async () => {
+                const compressorId = appState.activeCompressor;
+                if (compressorId) {
+                    const success = await this.router.shareCompressor(compressorId);
+                    if (success) {
+                        // Mostrar feedback visual
+                        shareButton.innerHTML = `
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm text-green-600">Copiado!</span>
+                        `;
+                        
+                        setTimeout(() => {
+                            shareButton.innerHTML = `
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                                </svg>
+                                <span class="text-sm">Compartilhar</span>
+                            `;
+                        }, 2000);
+                    }
+                }
+            });
+        }
+
+        // Event listener para mudanças de rota
+        window.addEventListener('routeChanged', (event) => {
+            const { route, view, compressorId } = event.detail;
+            console.log(`🔄 Rota alterada: ${route} -> ${view}`);
+
+            if (view === 'compressor-details' && compressorId) {
+                // Configurar o compressor ativo
+                appState.activeCompressor = compressorId;
+                appState.isModalOpen = false; // Não é modal mais
+                
+                // Configurar gráfico para o compressor
+                this.chartManager.setCompressor(compressorId);
+                
+                // Aguardar um pouco para a view aparecer
+                setTimeout(async () => {
+                    await this.chartManager.inicializarGrafico();
+                    
+                    // Definir métrica padrão baseada na disponibilidade da API
+                    if (appState.apiStatus.isOnline) {
+                        this.chartManager.setMetric('pressao');
+                        this._highlightMetricButton('btn-pressao');
+                    } else {
+                        this.chartManager.gerarDadosSimulados();
+                    }
+
+                    // Iniciar atualização em tempo real dos dados do compressor
+                    this.compressorManager.atualizarDadosTempoReal();
+                    
+                    // Limpar intervalos anteriores
+                    if (this.compressorManager.intervaloDados) {
+                        clearInterval(this.compressorManager.intervaloDados);
+                    }
+                    
+                    // Criar novo intervalo para atualização de dados
+                    this.compressorManager.intervaloDados = setInterval(() => {
+                        this.compressorManager.atualizarDadosTempoReal();
+                    }, appConfig.updateInterval.modalData);
+                }, 100);
+                
+            } else if (view === 'dashboard') {
+                // Limpar estado do compressor ativo
+                appState.activeCompressor = null;
+                appState.isModalOpen = false;
+                
+                // Parar atualizações do gráfico
+                this.chartManager.pararAtualizacao();
+                
+                // Limpar intervalo de dados
+                if (this.compressorManager && this.compressorManager.intervaloDados) {
+                    clearInterval(this.compressorManager.intervaloDados);
+                    this.compressorManager.intervaloDados = null;
+                }
+            }
+        });
+
+        console.log('🗺️ Event listeners do router configurados');
     }
 }
 
