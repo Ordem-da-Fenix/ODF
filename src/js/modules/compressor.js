@@ -172,6 +172,9 @@ export class CompressorManager {
                 console.log(`🔧 Modal - Compressor ${compressorId}: ligado=${dadosAtuais.ligado}, tem_dados_sensor=${!!dadosResponse?.dados}`);
                 appState.apiStatus.mode = 'online';
                 
+                // Salvar info do compressor para uso posterior
+                this.compressorInfo = compressorInfo;
+                
                 this.atualizarInterface(dadosAtuais, compressorInfo);
                 this.atualizarAlertas(dadosAtuais, compressorInfo);
                 
@@ -221,13 +224,12 @@ export class CompressorManager {
             this.umidadeElement.textContent = `${umidade.toFixed(2)}${appConfig.units.umidade}`;
         }
         
-        // Atualizar vibração (NOVIDADE)
-        if (this.vibracaoElement) {
-            const vibracao = dados.vibracao !== undefined && dados.vibracao !== null 
-                ? dados.vibracao 
-                : false;
+        // Atualizar vibração usando alertas da API
+        const infoCompressor = compressorInfo || this.compressorInfo;
+        if (this.vibracaoElement && infoCompressor && infoCompressor.alertas) {
+            const alertaVibracao = infoCompressor.alertas.vibracao || 'normal';
             
-            if (vibracao) {
+            if (alertaVibracao === 'detectada') {
                 this.vibracaoElement.textContent = 'Detectada';
                 this.vibracaoElement.className = 'text-2xl font-bold text-red-600';
                 // Atualizar card para estado crítico
@@ -238,6 +240,11 @@ export class CompressorManager {
             } else {
                 this.vibracaoElement.textContent = 'Normal';
                 this.vibracaoElement.className = 'text-2xl font-bold text-gray-600';
+                // Atualizar card para estado normal
+                const cardVibracao = document.getElementById('card-vibracao');
+                if (cardVibracao) {
+                    cardVibracao.className = 'bg-gray-50 p-6 rounded-lg text-center border border-gray-300';
+                }
             }
         }
         
