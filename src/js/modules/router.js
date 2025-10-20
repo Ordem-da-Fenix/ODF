@@ -148,8 +148,22 @@ export class Router {
     showDashboard() {
         console.log('📊 Exibindo Dashboard');
         
+        // Verificar se estamos vindo de uma página de detalhes
+        // Se sim, recarregar a página para garantir que os event listeners funcionem corretamente
+        if (this.currentRoute && this.currentRoute.includes('/compressor/')) {
+            console.log('🔄 Vindo de página de detalhes, recarregando...');
+            window.location.href = window.location.pathname + window.location.search;
+            return;
+        }
+        
         // Ocultar todas as views
         this.hideAllViews();
+        
+        // Ocultar seção de alertas
+        const secaoAlertas = document.getElementById('secao-alertas');
+        if (secaoAlertas) {
+            secaoAlertas.style.display = 'none';
+        }
         
         // Mostrar dashboard
         if (this.dashboardView) {
@@ -182,6 +196,12 @@ export class Router {
             this.compressorDetailsView.style.display = 'block';
         }
         
+        // Mostrar seção de alertas
+        const secaoAlertas = document.getElementById('secao-alertas');
+        if (secaoAlertas) {
+            secaoAlertas.style.display = 'block';
+        }
+        
         // Atualizar breadcrumb
         this.updateBreadcrumb([
             { label: 'Dashboard', path: '/', active: false },
@@ -212,6 +232,12 @@ export class Router {
         }
         if (this.compressorDetailsView) {
             this.compressorDetailsView.style.display = 'none';
+        }
+        
+        // Ocultar seção de alertas por padrão
+        const secaoAlertas = document.getElementById('secao-alertas');
+        if (secaoAlertas) {
+            secaoAlertas.style.display = 'none';
         }
     }
 

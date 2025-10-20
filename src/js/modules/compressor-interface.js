@@ -222,7 +222,8 @@ export class CompressorInterfaceManager {
             pressao: this.extrairPressao(compressor.apiData),
             potenciaAtual: this.extrairPotenciaApi(compressor.apiData),
             umidade: this.extrairUmidade(compressor.apiData),
-            vibracao: this.extrairVibracao(compressor.apiData)
+            vibracao: this.extrairVibracao(compressor.apiData),
+            corrente: this.extrairCorrente(compressor.apiData)
         };
 
         // Definir todos os atributos necessários para o sistema de filtros
@@ -235,6 +236,7 @@ export class CompressorInterfaceManager {
         div.setAttribute('data-alertas', dadosCompressor.alertas);
         div.setAttribute('data-temperatura', dadosCompressor.temperatura !== undefined ? dadosCompressor.temperatura : 25);
         div.setAttribute('data-pressao', dadosCompressor.pressao !== undefined ? dadosCompressor.pressao : 0);
+        div.setAttribute('data-corrente', dadosCompressor.corrente !== undefined ? dadosCompressor.corrente : 0);
 
         // Status indicator
         const statusConfig = this.getStatusConfig(compressor.status, compressor.alertas);
@@ -251,7 +253,7 @@ export class CompressorInterfaceManager {
                     
                     <!-- Métricas principais -->
                     <div class="flex-1">
-                        <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="grid grid-cols-3 gap-1 mb-3">
                             ${this.buildMobileMetrics(compressor, dadosCompressor)}
                         </div>
                         
@@ -298,10 +300,39 @@ export class CompressorInterfaceManager {
     buildMobileMetrics(compressor, dadosCompressor) {
         const metrics = [];
 
-        // Pressão
+        // === LINHA 1: TEMPERATURA AMBIENTE + UMIDADE ===
+        
+        // Temperatura Ambiente - usando alertas da API
+        if (dadosCompressor.temperaturaAmbiente !== undefined && dadosCompressor.temperaturaAmbiente !== null) {
+            const alertaApi = compressor.alertas?.temperatura_ambiente || 'normal';
+            const cor = this.getCorDoAlerta(alertaApi);
+            metrics.push(`
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Temp. Amb.</div>
+                    <div class="text-sm font-semibold text-${cor}-600">${dadosCompressor.temperaturaAmbiente.toFixed(1)}°C</div>
+                </div>
+            `);
+        }
+
+        // Umidade - usando alertas da API
+        if (dadosCompressor.umidade !== undefined && dadosCompressor.umidade !== null) {
+            const alertaApi = compressor.alertas?.umidade || 'normal';
+            const emoji = this.getEmojiDoAlerta(alertaApi, 'umidade');
+            const cor = this.getCorDoAlerta(alertaApi);
+            metrics.push(`
+                <div class="text-center">
+                    <div class="text-xs text-gray-500">Umidade</div>
+                    <div class="text-sm font-semibold text-${cor}-600">${emoji} ${dadosCompressor.umidade.toFixed(1)}%</div>
+                </div>
+            `);
+        }
+
+        // === LINHA 2: PRESSÃO + TEMPERATURA + CORRENTE ===
+        
+        // Pressão - usando alertas da API
         if (dadosCompressor.pressao !== undefined && dadosCompressor.pressao !== null) {
-            const nivel = this.calcularNivelAlerta('pressao', dadosCompressor.pressao);
-            const cor = appConfig.alertas.pressao[nivel]?.cor || 'gray';
+            const alertaApi = compressor.alertas?.pressao || 'normal';
+            const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
                 <div class="text-center">
                     <div class="text-xs text-gray-500">Pressão</div>
@@ -310,36 +341,60 @@ export class CompressorInterfaceManager {
             `);
         }
 
-        // Temperatura
+        // Temperatura (Equipamento) - usando alertas da API
         if (dadosCompressor.temperatura !== undefined && dadosCompressor.temperatura !== null) {
-            const nivel = this.calcularNivelAlerta('temp_equipamento', dadosCompressor.temperatura);
-            const cor = nivel === 'normal' ? 'green' : (nivel === 'critico' ? 'red' : 'orange');
+            const alertaApi = compressor.alertas?.temperatura_equipamento || 'normal';
+            const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
                 <div class="text-center">
-                    <div class="text-xs text-gray-500">Temp.</div>
+                    <div class="text-xs text-gray-500">Temp. Equip.</div>
                     <div class="text-sm font-semibold text-${cor}-600">${dadosCompressor.temperatura.toFixed(1)}°C</div>
                 </div>
             `);
         }
 
-        // Potência
-        if (dadosCompressor.potenciaAtual !== undefined && dadosCompressor.potenciaAtual !== null) {
+        // Corrente
+        if (dadosCompressor.corrente !== undefined && dadosCompressor.corrente !== null) {
+            const nivel = this.calcularNivelAlerta('corrente', dadosCompressor.corrente);
+            const cor = nivel === 'normal' ? 'green' : (nivel === 'critico' ? 'red' : 'orange');
             metrics.push(`
                 <div class="text-center">
-                    <div class="text-xs text-gray-500">Potência</div>
-                    <div class="text-sm font-semibold text-oftech-orange">${dadosCompressor.potenciaAtual.toFixed(1)}kW</div>
+                    <div class="text-xs text-gray-500">Corrente</div>
+                    <div class="text-sm font-semibold text-${cor}-600">${dadosCompressor.corrente.toFixed(1)}A</div>
                 </div>
             `);
         }
 
-        // Umidade (se disponível)
-        if (dadosCompressor.umidade !== undefined && dadosCompressor.umidade !== null) {
-            const nivel = this.calcularNivelAlerta('umidade', dadosCompressor.umidade);
-            const emoji = appConfig.alertas.umidade[nivel]?.emoji || '💧';
+        // === LINHA 3: FUNCIONAMENTO + VIBRAÇÃO + CONSUMO ===
+        
+        // Status de Funcionamento
+        const statusEmoji = compressor.status === 'online' ? '🟢' : '🔴';
+        const statusText = compressor.status === 'online' ? 'Ligado' : 'Desligado';
+        metrics.push(`
+            <div class="text-center">
+                <div class="text-xs text-gray-500">Status</div>
+                <div class="text-sm font-semibold">${statusEmoji} ${statusText}</div>
+            </div>
+        `);
+
+        // Vibração - usando alertas da API
+        const alertaVibracaoApi = compressor.alertas?.vibracao || 'normal';
+        const vibracaoEmoji = alertaVibracaoApi === 'detectada' ? '⚠️' : '✅';
+        const vibracaoText = alertaVibracaoApi === 'detectada' ? 'Detectada' : 'Normal';
+        const vibracaoCor = alertaVibracaoApi === 'detectada' ? 'red' : 'green';
+        metrics.push(`
+            <div class="text-center">
+                <div class="text-xs text-gray-500">Vibração</div>
+                <div class="text-sm font-semibold text-${vibracaoCor}-600">${vibracaoEmoji} ${vibracaoText}</div>
+            </div>
+        `);
+
+        // Consumo (Potência)
+        if (dadosCompressor.potenciaAtual !== undefined && dadosCompressor.potenciaAtual !== null) {
             metrics.push(`
                 <div class="text-center">
-                    <div class="text-xs text-gray-500">Umidade</div>
-                    <div class="text-sm font-semibold text-blue-600">${emoji} ${dadosCompressor.umidade.toFixed(1)}%</div>
+                    <div class="text-xs text-gray-500">Consumo</div>
+                    <div class="text-sm font-semibold text-oftech-orange">${dadosCompressor.potenciaAtual.toFixed(3)}kW</div>
                 </div>
             `);
         }
@@ -360,9 +415,10 @@ export class CompressorInterfaceManager {
             items.push('<span class="text-red-600">● Parado</span>');
         }
 
-        // Vibração (se crítica)
-        if (dadosCompressor.vibracao === true) {
-            items.push('<span class="text-red-600">⚠️ Vibração</span>');
+        // Vibração (se detectada via API)
+        const alertaVibracaoApi = compressor.alertas?.vibracao || 'normal';
+        if (alertaVibracaoApi === 'detectada') {
+            items.push('<span class="text-red-600">⚠️ Vibração Detectada</span>');
         }
 
         // Alertas gerais
@@ -482,32 +538,49 @@ export class CompressorInterfaceManager {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                     </svg>
-                    ${dadosCompressor.potenciaAtual.toFixed(2)} kW atual
+                    ${dadosCompressor.potenciaAtual.toFixed(3)} kW
                 </span>
             `);
         }
 
-        // Umidade (NOVIDADE)
+        // Corrente (NOVO)
+        if (dadosCompressor.corrente !== undefined && dadosCompressor.corrente !== null) {
+            items.push(`
+                <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    ${dadosCompressor.corrente.toFixed(1)} A
+                </span>
+            `);
+        }
+
+        // Umidade (NOVO)
         if (dadosCompressor.umidade !== undefined && dadosCompressor.umidade !== null) {
-            const nivelUmidade = this.calcularNivelAlerta('umidade', dadosCompressor.umidade);
-            const emoji = appConfig.alertas.umidade[nivelUmidade]?.emoji || '💧';
             items.push(`
                 <span class="flex items-center gap-1">
-                    <span class="text-xs">${emoji}</span>
-                    ${dadosCompressor.umidade.toFixed(2)}%
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                    </svg>
+                    ${dadosCompressor.umidade.toFixed(1)}% umidade
                 </span>
             `);
         }
 
-        // Vibração (NOVIDADE)
-        if (dadosCompressor.vibracao !== undefined && dadosCompressor.vibracao !== null) {
-            const nivelVibracao = dadosCompressor.vibracao ? 'critico' : 'normal';
-            const emoji = appConfig.alertas.vibracao[nivelVibracao]?.emoji || '🟢';
-            const texto = appConfig.alertas.vibracao[nivelVibracao]?.texto || 'Normal';
+        // Vibração - usando alertas da API
+        const alertaVibracaoApi = compressor.alertas?.vibracao || 'normal';
+        if (alertaVibracaoApi !== undefined && alertaVibracaoApi !== null) {
+            const vibracaoText = alertaVibracaoApi === 'detectada' ? 'Vibração detectada' : 'Vibração normal';
+            const vibracaoCor = alertaVibracaoApi === 'detectada' ? 'text-red-600' : 'text-green-600';
             items.push(`
-                <span class="flex items-center gap-1">
-                    <span class="text-xs">${emoji}</span>
-                    ${texto}
+                <span class="flex items-center gap-1 ${vibracaoCor}">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    ${vibracaoText}
                 </span>
             `);
         }
@@ -707,6 +780,19 @@ export class CompressorInterfaceManager {
             }
         }
         return false; // Padronização: sem dados = false (normal)
+    }
+
+    /**
+     * Extrai corrente dos dados da API (NOVIDADE)
+     */
+    extrairCorrente(apiData) {
+        if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+            const ultimoDado = apiData[0];
+            if (ultimoDado.corrente !== undefined && ultimoDado.corrente !== null) {
+                return parseFloat(ultimoDado.corrente);
+            }
+        }
+        return 0.0; // Padronização: sem dados = 0.0
     }
 
     /**
@@ -1098,6 +1184,50 @@ export class CompressorInterfaceManager {
             });
             console.log('🧪 Notificação de teste enviada');
         }
+    }
+
+    /**
+     * Mapeia alertas da API para cores do Tailwind
+     */
+    getCorDoAlerta(alertaApi) {
+        const mapeamento = {
+            'normal': 'green',
+            'abaixo_do_normal': 'yellow', 
+            'acima_do_normal': 'orange',
+            'critico': 'red',
+            'detectada': 'red'
+        };
+        return mapeamento[alertaApi] || 'gray';
+    }
+
+    /**
+     * Mapeia alertas da API para emojis
+     */
+    getEmojiDoAlerta(alertaApi, tipo) {
+        const mapeamentos = {
+            'umidade': {
+                'normal': '💧',
+                'abaixo_do_normal': '🔵',
+                'acima_do_normal': '🟠', 
+                'critico': '🔴'
+            },
+            'pressao': {
+                'normal': '🟢',
+                'abaixo_do_normal': '🟡',
+                'acima_do_normal': '🟠',
+                'critico': '🔴'
+            },
+            'default': {
+                'normal': '🟢',
+                'abaixo_do_normal': '🟡',
+                'acima_do_normal': '🟠', 
+                'critico': '🔴',
+                'detectada': '⚠️'
+            }
+        };
+        
+        const mapa = mapeamentos[tipo] || mapeamentos.default;
+        return mapa[alertaApi] || '🟢';
     }
 
 }

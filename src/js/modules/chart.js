@@ -178,6 +178,20 @@ export class ChartManager {
                 unit: 'kWh',
                 color: appConfig.chart.colors.primary,
                 field: 'consumo_estimado'
+            },
+            umidade: {
+                title: `Umidade - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: 'Umidade (%)',
+                unit: '%',
+                color: appConfig.chart.colors.umidade || '#3B82F6',
+                field: 'umidade'
+            },
+            corrente: {
+                title: `Corrente - Últimas ${appConfig.chart.dataPoints}h`,
+                yAxisLabel: 'Corrente (A)',
+                unit: 'A',
+                color: appConfig.chart.colors.corrente || '#F59E0B',
+                field: 'corrente'
             }
         };
 
@@ -188,14 +202,24 @@ export class ChartManager {
      * Muda a métrica exibida no gráfico
      */
     async setMetric(metric) {
-        this.metric = metric;
-        await this.buildDataForMetric(metric);
+        console.log(`📊 ChartManager.setMetric chamado com: ${metric}`);
         
-        if (this.chart) {
-            // Atualizar dados e configuração
-            this.chart.data = this.dados;
-            this.chart.options = this.buildChartConfig();
-            this.chart.update('active');
+        this.metric = metric;
+        
+        try {
+            await this.buildDataForMetric(metric);
+            
+            if (this.chart) {
+                // Atualizar dados e configuração
+                this.chart.data = this.dados;
+                this.chart.options = this.buildChartConfig();
+                this.chart.update('active');
+                console.log(`✅ Gráfico atualizado para métrica: ${metric}`);
+            } else {
+                console.warn('⚠️ Chart não inicializado, dados preparados para: ' + metric);
+            }
+        } catch (error) {
+            console.error('❌ Erro em setMetric:', error);
         }
     }
 

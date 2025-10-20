@@ -23,9 +23,11 @@ export const appConfig = {
             background: 'rgba(234, 88, 12, 0.1)',
             pressao: '#ea580c',
             temperatura: '#ef4444',
-            temperaturaAmbiente: '#06b6d4'
+            temperaturaAmbiente: '#06b6d4',
+            umidade: '#3B82F6',
+            corrente: '#F59E0B'
         },
-        metrics: ['pressao', 'temperatura', 'temperaturaAmbiente']
+        metrics: ['pressao', 'temperatura', 'umidade', 'corrente', 'temperaturaAmbiente']
     },
     
     // Configurações de notificações
@@ -89,6 +91,13 @@ export const appConfig = {
             alto: { min: 60, max: 70, color: '#f97316', emoji: '🟠' },
             critico: { min: 70, max: 100, color: '#ef4444', emoji: '🔴' }
         },
+        corrente: {
+            muito_baixo: { min: 0, max: 5, color: '#3b82f6', emoji: '🔵' },
+            baixo: { min: 5, max: 10, color: '#eab308', emoji: '🟡' },
+            normal: { min: 10, max: 20, color: '#22c55e', emoji: '🟢' },
+            alto: { min: 20, max: 30, color: '#f97316', emoji: '🟠' },
+            critico: { min: 30, max: 999, color: '#ef4444', emoji: '🔴' }
+        },
         vibracao: {
             normal: { value: false, color: '#22c55e', emoji: '🟢', texto: 'Normal' },
             critico: { value: true, color: '#ef4444', emoji: '⚠️', texto: 'Detectada' }
@@ -100,6 +109,7 @@ export const appConfig = {
         pressao: 'bar', // API usa bar, não PSI
         temperatura: '°C',
         umidade: '%',
+        corrente: 'A',
         tempo: 'h'
     }
 };

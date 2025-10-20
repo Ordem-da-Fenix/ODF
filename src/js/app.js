@@ -33,49 +33,68 @@ class OFtechApp {
     }
 
     setupMetricButtons() {
-        const btnP = document.getElementById('btn-pressao');
-        const btnT = document.getElementById('btn-temperatura');
-        const btnC = document.getElementById('btn-consumo');
+        // Configurar apenas os gráficos permitidos: pressão, temperatura, umidade, corrente, temperatura ambiente
+        // Usar setTimeout para garantir que os elementos existam após mudanças de rota
+        setTimeout(() => {
+            this._bindMetricCards();
+        }, 100);
+    }
 
-        if (btnP) btnP.addEventListener('click', () => {
-            this.chartManager.setMetric('pressao');
-            this._highlightMetricButton('btn-pressao');
-        });
-        if (btnT) btnT.addEventListener('click', () => {
-            this.chartManager.setMetric('temperatura');
-            this._highlightMetricButton('btn-temperatura');
-        });
-        if (btnC) btnC.addEventListener('click', () => {
-            this.chartManager.setMetric('consumo');
-            this._highlightMetricButton('btn-consumo');
-        });
-
-        // Default highlight - pressão é o padrão agora
-        this._highlightMetricButton('btn-pressao');
-
+    _bindMetricCards() {
         // Tornar os cards clicáveis e acessíveis via teclado
         const cardPressao = document.getElementById("card-pressao");
         const cardTemperatura = document.getElementById("card-temperatura");
-        const cardConsumo = document.getElementById("card-consumo");
+        const cardUmidade = document.getElementById("card-umidade");
+        const cardCorrente = document.getElementById("card-corrente");
+        const cardTemperaturaAmbiente = document.getElementById("card-temperatura-ambiente");
 
-        const bindCard = (el, metricId, btnId) => {
-            if (!el) return;
-            const activate = () => {
+        const bindCard = (el, metricId, metricName) => {
+            if (!el) {
+                console.warn(`⚠️ Card não encontrado: ${el?.id || 'undefined'}`);
+                return;
+            }
+            
+            // Remover listeners antigos para evitar duplicação
+            const newEl = el.cloneNode(true);
+            el.parentNode.replaceChild(newEl, el);
+            
+            const activate = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Log para debug
+                console.log(`🔘 Card clicado: ${metricName}, view atual: ${window.location.hash}`);
+                
+                // Verificar se estamos na view de detalhes
+                const detailsView = document.getElementById('compressor-details-view');
+                if (!detailsView || detailsView.style.display === 'none') {
+                    console.log('❌ Gráfico só pode ser ativado na view de detalhes');
+                    return false;
+                }
+                
+                console.log(`📊 Ativando gráfico: ${metricName}`);
                 this.chartManager.setMetric(metricId);
-                this._highlightMetricButton(btnId);
+                return false;
             };
-            el.addEventListener("click", activate);
-            el.addEventListener("keydown", (e) => {
+            
+            newEl.addEventListener("click", activate);
+            newEl.addEventListener("keydown", (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    activate();
+                    e.stopPropagation();
+                    activate(e);
                 }
             });
         };
 
-        bindCard(cardPressao, "pressao", "btn-pressao");
-        bindCard(cardTemperatura, "temperatura", "btn-temperatura");
-        bindCard(cardConsumo, "potencia", "btn-consumo"); // Card de consumo mostra potência/energia
+        // Bind dos cards clicáveis
+        bindCard(cardPressao, "pressao", "Pressão");
+        bindCard(cardTemperatura, "temperatura", "Temperatura do Equipamento");
+        bindCard(cardUmidade, "umidade", "Umidade");
+        bindCard(cardCorrente, "corrente", "Corrente");
+        bindCard(cardTemperaturaAmbiente, "temperaturaAmbiente", "Temperatura Ambiente");
+
+        console.log('📊 Cards de gráficos configurados: pressão, temperatura, umidade, corrente, temperatura ambiente');
     }
 
     _highlightMetricButton(id) {
@@ -393,9 +412,19 @@ class OFtechApp {
 
         // Eventos de teclado globais
         document.addEventListener('keydown', (event) => {
-            // Esc para fechar modal
-            if (event.key === 'Escape' && appState.isModalOpen) {
-                this.compressorManager.fecharModal();
+            // Esc para voltar ao dashboard da página de detalhes
+            if (event.key === 'Escape') {
+                const detailsView = document.getElementById('compressor-details-view');
+                if (detailsView && detailsView.style.display !== 'none') {
+                    console.log('🔙 ESC pressionado, voltando ao dashboard com recarregamento');
+                    window.location.href = window.location.pathname + window.location.search;
+                    return;
+                }
+                
+                // Fallback para modal (se ainda existir)
+                if (appState.isModalOpen) {
+                    this.compressorManager.fecharModal();
+                }
             }
             
             // F5 para forçar reconexão (desenvolvimento)
@@ -441,6 +470,13 @@ class OFtechApp {
         setInterval(() => {
             this.cleanupCache();
         }, appState.cache.ttl * 2); // A cada 2 minutos
+        
+        // Atualização periódica do dashboard
+        setInterval(async () => {
+            if (appState.apiStatus.isOnline && !appState.isModalOpen) {
+                await this.atualizarDashboardIndependente();
+            }
+        }, appConfig.updateInterval.realTimeData * 2); // A cada 4 segundos (2 * 2)
         
         // Log de estatísticas periódico
         setInterval(() => {
@@ -618,8 +654,11 @@ class OFtechApp {
         // Botão voltar na página de detalhes
         const backButton = document.getElementById('back-to-dashboard');
         if (backButton) {
-            backButton.addEventListener('click', () => {
-                this.router.navigate('/');
+            backButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔙 Voltando ao dashboard com recarregamento');
+                // Recarregar a página diretamente para garantir que os event listeners funcionem
+                window.location.href = window.location.pathname + window.location.search;
             });
         }
 
@@ -669,6 +708,9 @@ class OFtechApp {
                 setTimeout(async () => {
                     await this.chartManager.inicializarGrafico();
                     
+                    // Reconfigurar cards de métricas para esta view
+                    this._bindMetricCards();
+                    
                     // Definir métrica padrão baseada na disponibilidade da API
                     if (appState.apiStatus.isOnline) {
                         this.chartManager.setMetric('pressao');
@@ -708,6 +750,102 @@ class OFtechApp {
         });
 
         console.log('🗺️ Event listeners do router configurados');
+    }
+
+    /**
+     * Atualiza dashboard com dados do compressor ativo independentemente
+     */
+    async atualizarDashboardIndependente() {
+        if (!appState.apiStatus.isOnline) return;
+        
+        try {
+            // Buscar dados do primeiro compressor para atualizar dashboard
+            const response = await apiService.getCompressores();
+            
+            if (response && response.compressores && response.compressores.length > 0) {
+                const compressor = response.compressores[0]; // Pegar o primeiro compressor
+                
+                // Buscar dados de sensores
+                const dadosResponse = await apiService.getDadosTempoReal(compressor.id_compressor, 1);
+                
+                if (dadosResponse?.dados && dadosResponse.dados.length > 0) {
+                    const ultimoDado = dadosResponse.dados[0];
+                    
+                    // Atualizar elementos do dashboard
+                    this.atualizarElementosDashboard({
+                        pressao: ultimoDado.pressao || 0.0,
+                        temperatura: ultimoDado.temp_equipamento || 0.0,
+                        temperaturaAmbiente: ultimoDado.temp_ambiente || 0.0,
+                        potencia: ultimoDado.potencia_kw || 0.0,
+                        umidade: ultimoDado.umidade || 0.0,
+                        vibracao: ultimoDado.vibracao || false,
+                        corrente: ultimoDado.corrente || 0.0,
+                        ligado: compressor.esta_ligado
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('Erro ao atualizar dashboard independente:', error);
+        }
+    }
+
+    /**
+     * Atualiza elementos específicos do dashboard
+     */
+    atualizarElementosDashboard(dados) {
+        // Atualizar pressão
+        const pressaoEl = document.getElementById('pressao');
+        if (pressaoEl) {
+            pressaoEl.textContent = `${dados.pressao.toFixed(1)} bar`;
+        }
+        
+        // Atualizar temperatura
+        const temperaturaEl = document.getElementById('temperatura');
+        if (temperaturaEl) {
+            temperaturaEl.textContent = `${dados.temperatura.toFixed(1)} °C`;
+        }
+        
+        // Atualizar temperatura ambiente
+        const tempAmbienteEl = document.getElementById('temperatura-ambiente-dashboard');
+        if (tempAmbienteEl) {
+            tempAmbienteEl.textContent = `${dados.temperaturaAmbiente.toFixed(1)} °C`;
+        }
+        
+        // Atualizar umidade
+        const umidadeEl = document.getElementById('umidade');
+        if (umidadeEl) {
+            umidadeEl.textContent = `${dados.umidade.toFixed(1)}%`;
+        }
+        
+        // Atualizar corrente
+        const correnteEl = document.getElementById('corrente');
+        if (correnteEl) {
+            correnteEl.textContent = `${dados.corrente.toFixed(1)} A`;
+        }
+        
+        // Atualizar funcionamento
+        const funcionamentoEl = document.getElementById('funcionamento-dashboard');
+        if (funcionamentoEl) {
+            if (dados.ligado) {
+                funcionamentoEl.textContent = '🟢 Ligado';
+                funcionamentoEl.className = 'text-2xl font-bold text-green-600';
+            } else {
+                funcionamentoEl.textContent = '🔴 Desligado';
+                funcionamentoEl.className = 'text-2xl font-bold text-red-600';
+            }
+        }
+        
+        // Atualizar vibração
+        const vibracaoEl = document.getElementById('vibracao');
+        if (vibracaoEl) {
+            if (dados.vibracao) {
+                vibracaoEl.textContent = '⚠️ Anormal';
+                vibracaoEl.className = 'text-2xl font-bold text-red-600';
+            } else {
+                vibracaoEl.textContent = '✅ Normal';
+                vibracaoEl.className = 'text-2xl font-bold text-green-600';
+            }
+        }
     }
 }
 

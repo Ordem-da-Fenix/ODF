@@ -340,28 +340,25 @@
                     </button>
                 </div>
 
-                <!-- Métricas Principais -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    <div id="card-pressao" role="button" tabindex="0"
-                        class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange hover:shadow-lg transition-all">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Pressão</h3>
-                        <p id="pressao" class="text-3xl font-bold text-oftech-orange">0 bar</p>
+                <!-- Métricas Principais - Nova Organização -->
+                
+                <!-- Linha 1: Temperatura Ambiente + Umidade -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    <div id="card-temperatura-ambiente" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-green-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 hover:shadow-lg transition-all">
+                        <div class="flex items-center justify-center mb-2">
+                            <svg class="w-6 h-6 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Temp. Ambiente</h3>
+                        </div>
+                        <p id="temperatura-ambiente-dashboard" class="text-3xl font-bold text-green-600">0 °C</p>
+                        <p class="text-sm text-gray-500 mt-1">Clique para gráfico</p>
                     </div>
-                    <div id="card-temperatura" role="button" tabindex="0"
-                        class="bg-gray-50 p-6 rounded-lg text-center border border-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 hover:shadow-lg transition-all">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Temperatura</h3>
-                        <p id="temperatura" class="text-3xl font-bold text-red-600">0 °C</p>
-                    </div>
-                    <div id="card-consumo" role="button" tabindex="0"
-                        class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange hover:shadow-lg transition-all">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Consumo</h3>
-                        <p id="consumo-energia" class="text-3xl font-bold text-oftech-orange">0 kW</p>
-                    </div>
-                </div>
-
-                <!-- Métricas Ambientais - Melhor Layout Mobile -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                    <div id="card-umidade" class="bg-gray-50 p-6 rounded-lg text-center border border-blue-200">
+                    
+                    <div id="card-umidade" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-blue-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 hover:shadow-lg transition-all">
                         <div class="flex items-center justify-center mb-2">
                             <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -370,9 +367,55 @@
                             <h3 class="text-lg font-semibold text-gray-800">Umidade</h3>
                         </div>
                         <p id="umidade" class="text-3xl font-bold text-blue-600">0%</p>
-                        <p class="text-sm text-gray-500 mt-1">Ambiente</p>
+                        <p class="text-sm text-gray-500 mt-1">Clique para gráfico</p>
                     </div>
-                    <div id="card-vibracao" class="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
+                </div>
+
+                <!-- Linha 2: Pressão + Temperatura + Corrente -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div id="card-pressao" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-oftech-orange hover:shadow-lg transition-all">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Pressão</h3>
+                        <p id="pressao" class="text-3xl font-bold text-oftech-orange">0 bar</p>
+                        <p class="text-sm text-gray-500 mt-1">Clique para gráfico</p>
+                    </div>
+                    
+                    <div id="card-temperatura" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 hover:shadow-lg transition-all">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Temperatura</h3>
+                        <p id="temperatura" class="text-3xl font-bold text-red-600">0 °C</p>
+                        <p class="text-sm text-gray-500 mt-1">Clique para gráfico</p>
+                    </div>
+                    
+                    <div id="card-corrente" role="button" tabindex="0"
+                        class="bg-gray-50 p-6 rounded-lg text-center border border-yellow-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-yellow-500 hover:shadow-lg transition-all">
+                        <div class="flex items-center justify-center mb-2">
+                            <svg class="w-6 h-6 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Corrente</h3>
+                        </div>
+                        <p id="corrente" class="text-3xl font-bold text-yellow-600">0 A</p>
+                        <p class="text-sm text-gray-500 mt-1">Clique para gráfico</p>
+                    </div>
+                </div>
+
+                <!-- Linha 3: Funcionamento + Vibração + Consumo -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
+                        <div class="flex items-center justify-center mb-2">
+                            <svg class="w-6 h-6 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-gray-800">Status</h3>
+                        </div>
+                        <p id="funcionamento-dashboard" class="text-2xl font-bold text-gray-600">Verificando...</p>
+                        <p class="text-sm text-gray-500 mt-1">Estado atual</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-gray-200">
                         <div class="flex items-center justify-center mb-2">
                             <svg class="w-6 h-6 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -381,38 +424,20 @@
                             <h3 class="text-lg font-semibold text-gray-800">Vibração</h3>
                         </div>
                         <p id="vibracao" class="text-2xl font-bold text-gray-600">Normal</p>
+                        <p class="text-sm text-gray-500 mt-1">Monitoramento</p>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Consumo</h3>
+                        <p id="consumo-energia" class="text-3xl font-bold text-oftech-orange">0 kW</p>
+                        <p class="text-sm text-gray-500 mt-1">Da API</p>
+                    </div>
+                </div>
                         <p class="text-sm text-gray-500 mt-1">Equipamento</p>
                     </div>
                 </div>
 
-                <!-- Informações Adicionais -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-oftech-orange/20">
-                        <div class="flex items-center justify-center mb-3">
-                            <svg class="w-6 h-6 text-oftech-orange mr-2" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <h3 class="text-lg font-semibold text-gray-800">Funcionamento</h3>
-                        </div>
-                        <p id="tempo-funcionamento" class="text-2xl font-bold text-oftech-orange">--</p>
-                        <p class="text-sm text-gray-500 mt-1">Status atual</p>
-                    </div>
-
-                    <div class="bg-gray-50 p-6 rounded-lg text-center border border-red-200">
-                        <div class="flex items-center justify-center mb-3">
-                            <svg class="w-6 h-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                                </path>
-                            </svg>
-                            <h3 class="text-lg font-semibold text-gray-800">Temperatura Ambiente</h3>
-                        </div>
-                        <p id="temperatura-ambiente" class="text-2xl font-bold text-red-600">-- °C</p>
-                        <p class="text-sm text-gray-500 mt-1">Sensor local</p>
-                    </div>
-                </div>
+                
 
                 <!-- Gráfico em Tela Cheia -->
                 <div class="bg-gray-50 p-6 rounded-lg">
@@ -420,16 +445,94 @@
                         <canvas id="graficoEnergia" class="w-full h-full"></canvas>
                     </div>
                 </div>
+
+                <!-- Seção de Alertas - Visível apenas na view de detalhes -->
+                <div id="secao-alertas" class="bg-white p-6 rounded-lg border border-gray-200 mt-6" style="display: none;">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        Status e Alertas
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Alerta de Pressão -->
+                        <div id="alerta-pressao" class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">🟢</div>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Pressão</h4>
+                                    <p class="text-sm text-green-600" id="alerta-pressao-texto">Normal</p>
+                                    <p class="text-xs text-green-500 mt-1" id="alerta-pressao-valor">0 bar</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta de Temperatura -->
+                        <div id="alerta-temperatura" class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">🟢</div>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Temperatura</h4>
+                                    <p class="text-sm text-green-600" id="alerta-temperatura-texto">Normal</p>
+                                    <p class="text-xs text-green-500 mt-1" id="alerta-temperatura-valor">0 °C</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta de Temperatura Ambiente -->
+                        <div id="alerta-temperatura-ambiente" class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">🟢</div>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Temp. Ambiente</h4>
+                                    <p class="text-sm text-green-600" id="alerta-temperatura-ambiente-texto">Normal</p>
+                                    <p class="text-xs text-green-500 mt-1" id="alerta-temperatura-ambiente-valor">0 °C</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta de Umidade -->
+                        <div id="alerta-umidade" class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">🟢</div>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Umidade</h4>
+                                    <p class="text-sm text-green-600" id="alerta-umidade-texto">Normal</p>
+                                    <p class="text-xs text-green-500 mt-1" id="alerta-umidade-valor">0%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta de Corrente -->
+                        <div id="alerta-corrente" class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">🟢</div>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Corrente</h4>
+                                    <p class="text-sm text-green-600" id="alerta-corrente-texto">Normal</p>
+                                    <p class="text-xs text-green-500 mt-1" id="alerta-corrente-valor">0 A</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerta de Vibração -->
+                        <div id="alerta-vibracao" class="p-4 rounded-lg border-l-4 border-green-500 bg-green-50">
+                            <div class="flex items-center">
+                                <div class="text-2xl mr-3">✅</div>
+                                <div>
+                                    <h4 class="font-semibold text-green-800">Vibração</h4>
+                                    <p class="text-sm text-green-600" id="alerta-vibracao-texto">Normal</p>
+                                    <p class="text-xs text-green-500 mt-1" id="alerta-vibracao-valor">Sem anomalias</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <!-- End Compressor Details View -->
 
-    </div>
-    <!-- End Main Content Container -->
-
-    <!-- Modal de detalhes do compressor (DEPRECATED - será removido) -->
-    <div id="modal-detalhes" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center" style="display: none !important;">
-        <!-- Modal content disabled for router migration -->
     </div>
 
     <script type="module" src="src/js/app.js"></script>

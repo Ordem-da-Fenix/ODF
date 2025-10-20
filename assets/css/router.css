@@ -1,5 +1,14 @@
 /* Router Styles - Hash Navigation System */
 
+/* Seção de Alertas - Visível apenas na view de detalhes */
+#dashboard-view #secao-alertas {
+    display: none !important;
+}
+
+#compressor-details-view #secao-alertas {
+    display: block !important;
+}
+
 /* Breadcrumb Navigation */
 #breadcrumb {
     font-size: 0.875rem;

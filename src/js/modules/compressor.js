@@ -17,6 +17,7 @@ export class CompressorManager {
         this.temperaturaAmbienteElement = document.getElementById('temperatura-ambiente');
         this.umidadeElement = document.getElementById('umidade');
         this.vibracaoElement = document.getElementById('vibracao');
+        this.correnteElement = document.getElementById('corrente');
         this.intervaloDados = null;
         this.useApi = apiStatus; // Recebe status da API já verificado
         this.alertaCriticoMostrado = false; // Flag para evitar spam de alertas
@@ -232,17 +233,20 @@ export class CompressorManager {
                 // Atualizar card para estado crítico
                 const cardVibracao = document.getElementById('card-vibracao');
                 if (cardVibracao) {
-                    cardVibracao.className = 'bg-white p-6 rounded-lg text-center border border-red-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500';
+                    cardVibracao.className = 'bg-red-50 p-6 rounded-lg text-center border border-red-300';
                 }
             } else {
                 this.vibracaoElement.textContent = 'Normal';
-                this.vibracaoElement.className = 'text-2xl font-bold text-green-600';
-                // Atualizar card para estado normal
-                const cardVibracao = document.getElementById('card-vibracao');
-                if (cardVibracao) {
-                    cardVibracao.className = 'bg-white p-6 rounded-lg text-center border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-500';
-                }
+                this.vibracaoElement.className = 'text-2xl font-bold text-gray-600';
             }
+        }
+        
+        // Atualizar corrente (NOVIDADE)
+        if (this.correnteElement) {
+            const corrente = dados.corrente !== undefined && dados.corrente !== null 
+                ? dados.corrente 
+                : 0.0;
+            this.correnteElement.textContent = `${corrente.toFixed(2)} A`;
         }
         
         // Atualizar status de funcionamento
@@ -259,8 +263,66 @@ export class CompressorManager {
         // Consumo de energia (usar dados reais da API)
         const consumoElement = document.getElementById('consumo-energia');
         if (consumoElement) {
-            // Usar potência real da API em vez de estimativa (2 casas decimais)
-            consumoElement.textContent = `${dados.potencia.toFixed(2)} kW`;
+            // Usar potência direta da API (já vem calculada)
+            consumoElement.textContent = `${dados.potencia.toFixed(3)} kW`;
+        }
+        
+        // Atualizar também elementos do dashboard se estiver na página de detalhes
+        this.atualizarDashboard(dados, compressorInfo);
+    }
+
+    /**
+     * Atualiza elementos do dashboard quando estiver na página de detalhes
+     */
+    atualizarDashboard(dados, compressorInfo = null) {
+        // Atualizar temperatura ambiente no dashboard
+        const tempAmbienteDashboard = document.getElementById('temperatura-ambiente-dashboard');
+        if (tempAmbienteDashboard) {
+            const tempAmbiente = dados.temperaturaAmbiente !== undefined && dados.temperaturaAmbiente !== null 
+                ? dados.temperaturaAmbiente 
+                : 0.0;
+            tempAmbienteDashboard.textContent = `${tempAmbiente.toFixed(1)} °C`;
+        }
+        
+        // Atualizar status de funcionamento no dashboard
+        const funcionamentoDashboard = document.getElementById('funcionamento-dashboard');
+        if (funcionamentoDashboard) {
+            if (dados.ligado) {
+                funcionamentoDashboard.textContent = '🟢 Ligado';
+                funcionamentoDashboard.className = 'text-2xl font-bold text-green-600';
+            } else {
+                funcionamentoDashboard.textContent = '🔴 Desligado';
+                funcionamentoDashboard.className = 'text-2xl font-bold text-red-600';
+            }
+        }
+        
+        // Atualizar outros elementos principais no dashboard se necessário
+        const pressaoDashboard = document.getElementById('pressao');
+        const temperaturaDashboard = document.getElementById('temperatura');
+        const umidadeDashboard = document.getElementById('umidade');
+        const correnteDashboard = document.getElementById('corrente');
+        const consumoDashboard = document.getElementById('consumo-energia');
+        
+        if (pressaoDashboard) {
+            pressaoDashboard.textContent = `${dados.pressao.toFixed(1)} bar`;
+        }
+        
+        if (temperaturaDashboard) {
+            temperaturaDashboard.textContent = `${dados.temperatura.toFixed(1)} °C`;
+        }
+        
+        if (umidadeDashboard) {
+            const umidade = dados.umidade !== undefined && dados.umidade !== null ? dados.umidade : 0.0;
+            umidadeDashboard.textContent = `${umidade.toFixed(1)}%`;
+        }
+        
+        if (correnteDashboard) {
+            const corrente = dados.corrente !== undefined && dados.corrente !== null ? dados.corrente : 0.0;
+            correnteDashboard.textContent = `${corrente.toFixed(1)} A`;
+        }
+        
+        if (consumoDashboard) {
+            consumoDashboard.textContent = `${dados.potencia.toFixed(3)} kW`;
         }
     }
 
@@ -268,21 +330,43 @@ export class CompressorManager {
      * Atualiza os alertas visuais baseado nos dados
      */
     atualizarAlertas(dados, compressorInfo = null) {
-        // Determinar níveis de alerta
-        const nivelPressao = configUtils.getAlertLevel('pressao', dados.pressao);
-        const nivelTempEquip = configUtils.getAlertLevel('temperatura_equipamento', dados.temperatura);
-        const nivelTempAmb = configUtils.getAlertLevel('temperatura_ambiente', dados.temperaturaAmbiente || 25);
-
-        // Aplicar cores nos cards
-        this.aplicarCoresAlertas({
-            pressao: nivelPressao,
-            temperatura: nivelTempEquip,
-            temperaturaAmbiente: nivelTempAmb
-        });
-
-        // Se temos info do compressor da API, usar alertas dela
+        // Se temos info do compressor da API com alertas, usar diretamente
         if (compressorInfo && compressorInfo.alertas) {
+            console.log('📊 Alertas da API:', compressorInfo.alertas);
+            
+            // Aplicar cores nos cards usando alertas da API
+            this.aplicarCoresAlertas({
+                pressao: compressorInfo.alertas.pressao,
+                temperatura: compressorInfo.alertas.temperatura_equipamento,
+                temperaturaAmbiente: compressorInfo.alertas.temperatura_ambiente
+            });
+
+            // Atualizar seção de alertas abaixo do gráfico
+            this.atualizarSecaoAlertas(dados, compressorInfo.alertas);
+            
+            // Aplicar alertas da API (notificações, etc.)
             this.aplicarAlertasApi(compressorInfo.alertas);
+        } else {
+            // Fallback para quando não há alertas da API (modo offline ou erro)
+            console.log('⚠️ Alertas não disponíveis da API, usando valores padrão');
+            
+            // Usar valores normais como fallback
+            const alertasPadrao = {
+                pressao: 'normal',
+                temperatura_equipamento: 'normal',
+                temperatura_ambiente: 'normal',
+                umidade: 'normal',
+                corrente: 'normal',
+                vibracao: 'normal'
+            };
+            
+            this.aplicarCoresAlertas({
+                pressao: alertasPadrao.pressao,
+                temperatura: alertasPadrao.temperatura_equipamento,
+                temperaturaAmbiente: alertasPadrao.temperatura_ambiente
+            });
+            
+            this.atualizarSecaoAlertas(dados, alertasPadrao);
         }
     }
 
@@ -306,20 +390,26 @@ export class CompressorManager {
                 
                 // Aplicar nova cor baseada no nível
                 switch (nivel) {
+                    case 'detectada':
                     case 'critico':
                         card.classList.add('border-red-500');
                         break;
+                    case 'acima_do_normal':
                     case 'alto':
                         card.classList.add('border-orange-500');
                         break;
                     case 'normal':
                         card.classList.add('border-green-500');
                         break;
+                    case 'abaixo_do_normal':
                     case 'baixo':
                         card.classList.add('border-yellow-500');
                         break;
                     case 'muito_baixo':
                         card.classList.add('border-blue-500');
+                        break;
+                    default:
+                        card.classList.add('border-green-500'); // padrão
                         break;
                 }
             }
@@ -497,6 +587,139 @@ export class CompressorManager {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Atualiza a seção de alertas abaixo do gráfico
+     */
+    atualizarSecaoAlertas(dados, alertasApi) {
+        // Usar alertas diretamente da API (já calculados no backend)
+        this.atualizarAlertaIndividual('pressao', dados.pressao, alertasApi.pressao || 'normal', 'bar');
+        this.atualizarAlertaIndividual('temperatura', dados.temperatura, alertasApi.temperatura_equipamento || 'normal', '°C');
+        this.atualizarAlertaIndividual('temperatura-ambiente', dados.temperaturaAmbiente || 25, alertasApi.temperatura_ambiente || 'normal', '°C');
+        this.atualizarAlertaIndividual('umidade', dados.umidade || 0, alertasApi.umidade || 'normal', '%');
+        this.atualizarAlertaIndividual('corrente', dados.corrente || 0, alertasApi.corrente || 'normal', 'A');
+        
+        // Vibração - usar diretamente o valor da API ("detectada" ou "normal")
+        const alertaVibracao = alertasApi.vibracao || 'normal';
+        this.atualizarAlertaVibracao(alertaVibracao);
+    }
+
+    /**
+     * Atualiza um alerta individual
+     */
+    atualizarAlertaIndividual(tipo, valor, nivel, unidade) {
+        const alertaEl = document.getElementById(`alerta-${tipo}`);
+        const textoEl = document.getElementById(`alerta-${tipo}-texto`);
+        const valorEl = document.getElementById(`alerta-${tipo}-valor`);
+        
+        if (!alertaEl || !textoEl || !valorEl) return;
+
+        // Mapear níveis da API para cores e textos
+        const configuracoes = {
+            'detectada': { 
+                cor: 'border-red-500 bg-red-50', 
+                emoji: '🔴', 
+                texto: 'Detectada',
+                textClass: 'text-red-800',
+                valueClass: 'text-red-500'
+            },
+            'critico': { 
+                cor: 'border-red-500 bg-red-50', 
+                emoji: '🔴', 
+                texto: 'Crítico',
+                textClass: 'text-red-800',
+                valueClass: 'text-red-500'
+            },
+            'alto': { 
+                cor: 'border-orange-500 bg-orange-50', 
+                emoji: '🟠', 
+                texto: 'Alto',
+                textClass: 'text-orange-800',
+                valueClass: 'text-orange-500'
+            },
+            'acima_do_normal': { 
+                cor: 'border-orange-500 bg-orange-50', 
+                emoji: '🟠', 
+                texto: 'Acima do Normal',
+                textClass: 'text-orange-800',
+                valueClass: 'text-orange-500'
+            },
+            'normal': { 
+                cor: 'border-green-500 bg-green-50', 
+                emoji: '🟢', 
+                texto: 'Normal',
+                textClass: 'text-green-800',
+                valueClass: 'text-green-500'
+            },
+            'abaixo_do_normal': { 
+                cor: 'border-yellow-500 bg-yellow-50', 
+                emoji: '🟡', 
+                texto: 'Abaixo do Normal',
+                textClass: 'text-yellow-800',
+                valueClass: 'text-yellow-500'
+            },
+            'baixo': { 
+                cor: 'border-yellow-500 bg-yellow-50', 
+                emoji: '🟡', 
+                texto: 'Baixo',
+                textClass: 'text-yellow-800',
+                valueClass: 'text-yellow-500'
+            },
+            'muito_baixo': { 
+                cor: 'border-blue-500 bg-blue-50', 
+                emoji: '🔵', 
+                texto: 'Muito Baixo',
+                textClass: 'text-blue-800',
+                valueClass: 'text-blue-500'
+            }
+        };
+
+        const config = configuracoes[nivel] || configuracoes['normal'];
+
+        // Atualizar classes do container
+        alertaEl.className = `p-4 rounded-lg border-l-4 ${config.cor}`;
+        
+        // Atualizar emoji
+        const emojiEl = alertaEl.querySelector('.text-2xl');
+        if (emojiEl) emojiEl.textContent = config.emoji;
+        
+        // Atualizar texto
+        textoEl.textContent = config.texto;
+        textoEl.className = `text-sm ${config.textClass}`;
+        
+        // Atualizar valor
+        valorEl.textContent = `${valor.toFixed(1)} ${unidade}`;
+        valorEl.className = `text-xs ${config.valueClass} mt-1`;
+    }
+
+    /**
+     * Atualiza o alerta de vibração (caso especial)
+     */
+    atualizarAlertaVibracao(alertaVibracao) {
+        const alertaEl = document.getElementById('alerta-vibracao');
+        const textoEl = document.getElementById('alerta-vibracao-texto');
+        const valorEl = document.getElementById('alerta-vibracao-valor');
+        
+        if (!alertaEl || !textoEl || !valorEl) return;
+
+        if (alertaVibracao === 'detectada') {
+            alertaEl.className = 'p-4 rounded-lg border-l-4 border-red-500 bg-red-50';
+            const emojiEl = alertaEl.querySelector('.text-2xl');
+            if (emojiEl) emojiEl.textContent = '⚠️';
+            textoEl.textContent = 'Detectada';
+            textoEl.className = 'text-sm text-red-800';
+            valorEl.textContent = 'Vibração anormal detectada';
+            valorEl.className = 'text-xs text-red-500 mt-1';
+        } else {
+            alertaEl.className = 'p-4 rounded-lg border-l-4 border-green-500 bg-green-50';
+            const emojiEl = alertaEl.querySelector('.text-2xl');
+            if (emojiEl) emojiEl.textContent = '✅';
+            textoEl.textContent = 'Normal';
+            textoEl.className = 'text-sm text-green-800';
+            valorEl.textContent = 'Sem anomalias detectadas';
+            valorEl.className = 'text-xs text-green-500 mt-1';
         }
     }
 
