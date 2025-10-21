@@ -26,10 +26,7 @@ export class CompressorManager {
     }
 
     async init() {
-        console.log(`🔧 CompressorManager - Modo: ${this.useApi ? 'API' : 'Offline'}`);
         this.setupEventListeners();
-        
-        console.log('📋 CompressorManager inicializado');
     }
 
 
@@ -150,6 +147,7 @@ export class CompressorManager {
                     potencia: 0.0,
                     umidade: 0.0,
                     vibracao: false,
+                    corrente: 0.0,
                     ligado: compressorInfo.esta_ligado,
                     timestamp: new Date().toISOString()
                 };
@@ -164,6 +162,7 @@ export class CompressorManager {
                         potencia: ultimoDado.potencia_kw || 0.0,
                         umidade: ultimoDado.umidade || 0.0,
                         vibracao: ultimoDado.vibracao || false,
+                        corrente: ultimoDado.corrente || 0.0,
                         ligado: compressorInfo.esta_ligado,
                         timestamp: ultimoDado.data_medicao || new Date().toISOString()
                     };

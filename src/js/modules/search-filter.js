@@ -131,7 +131,7 @@ export class SearchFilterManager {
         });
 
         this.filteredCompressors = [...this.compressors];
-        console.log(`🔍 SearchFilter: ${this.compressors.length} compressores carregados`);
+        // Compressores carregados para filtro
     }
 
     toggleAdvancedFilters() {
@@ -396,7 +396,7 @@ export class SearchFilterManager {
 
     // Método para ser chamado quando a interface é atualizada
     onCompressorsUpdated() {
-        console.log('🔄 Atualizando filtros após mudança na interface');
+        // Atualizando filtros
         this.reloadCompressorsFromDOM();
         this.updateResultsCount();
     }

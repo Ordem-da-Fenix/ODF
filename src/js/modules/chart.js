@@ -202,8 +202,6 @@ export class ChartManager {
      * Muda a métrica exibida no gráfico
      */
     async setMetric(metric) {
-        console.log(`📊 ChartManager.setMetric chamado com: ${metric}`);
-        
         this.metric = metric;
         
         try {
@@ -214,7 +212,7 @@ export class ChartManager {
                 this.chart.data = this.dados;
                 this.chart.options = this.buildChartConfig();
                 this.chart.update('active');
-                console.log(`✅ Gráfico atualizado para métrica: ${metric}`);
+                // Gráfico atualizado
             } else {
                 console.warn('⚠️ Chart não inicializado, dados preparados para: ' + metric);
             }
@@ -274,11 +272,14 @@ export class ChartManager {
 
         dadosHistoricos.forEach((item, index) => {
             if (this.useApi) {
-                // Dados da API
+                // Dados da API - converter UTC para horário local brasileiro
+                // API retorna: "2025-10-21T10:43:40+00:00" (UTC)
+                // Convertemos para: "07:43:40" (horário de Brasília UTC-3)
                 const timestamp = new Date(item.data_medicao);
                 labels.push(timestamp.toLocaleTimeString('pt-BR', { 
                     hour: '2-digit', 
-                    minute: '2-digit' 
+                    minute: '2-digit',
+                    timeZone: 'America/Sao_Paulo' // Força conversão para horário brasileiro
                 }));
 
                 let value = 0;
@@ -299,6 +300,12 @@ export class ChartManager {
                         // Estimar consumo baseado em pressão e temperatura
                         value = (item.pressao * 2.5) + (item.temp_equipamento * 0.3);
                         break;
+                    case 'umidade':
+                        value = item.umidade || 0;
+                        break;
+                    case 'corrente':
+                        value = item.corrente || 0;
+                        break;
                 }
                 data.push(value);
             } else {
@@ -315,7 +322,8 @@ export class ChartManager {
                 now.setHours(now.getHours() - (appConfig.chart.dataPoints - labels.length));
                 labels.unshift(now.toLocaleTimeString('pt-BR', { 
                     hour: '2-digit', 
-                    minute: '2-digit' 
+                    minute: '2-digit',
+                    timeZone: 'America/Sao_Paulo' // Horário brasileiro
                 }));
             } else {
                 labels.unshift(`${appConfig.chart.dataPoints - labels.length}h`);
@@ -407,6 +415,12 @@ export class ChartManager {
                             case 'consumo':
                                 novoValor = (ultimoDado.pressao * 2.5) + (ultimoDado.temp_equipamento * 0.3);
                                 break;
+                            case 'umidade':
+                                novoValor = ultimoDado.umidade || 0;
+                                break;
+                            case 'corrente':
+                                novoValor = ultimoDado.corrente || 0;
+                                break;
                         }
                     }
                 } catch (apiError) {
@@ -428,7 +442,8 @@ export class ChartManager {
                 this.chart.data.labels.shift();
                 this.chart.data.labels.push(agora.toLocaleTimeString('pt-BR', { 
                     hour: '2-digit', 
-                    minute: '2-digit' 
+                    minute: '2-digit',
+                    timeZone: 'America/Sao_Paulo' // Horário brasileiro
                 }));
                 
                 // Atualizar gráfico com animação suave
@@ -463,7 +478,7 @@ export class ChartManager {
      * Força recarga dos dados do gráfico
      */
     async recarregarDados() {
-        console.log('🔄 Recarregando dados do gráfico...');
+        // Recarregando dados do gráfico
         await this.buildDataForMetric(this.metric);
         
         if (this.chart) {

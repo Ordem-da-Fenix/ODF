@@ -15,7 +15,9 @@ export class Utils {
      * Formata timestamp para exibição
      */
     static formatarTempo(timestamp) {
-        return new Date(timestamp).toLocaleString('pt-BR');
+        return new Date(timestamp).toLocaleString('pt-BR', {
+            timeZone: 'America/Sao_Paulo' // Horário brasileiro
+        });
     }
 
     /**

@@ -18,15 +18,17 @@ export class CompressorInterfaceManager {
         this.useApi = apiStatus; // Recebe status da API já verificado
         this.alertasAnteriores = null; // Cache para monitorar mudanças nos alertas
         this.isMobile = window.innerWidth < 1024; // Breakpoint lg do Tailwind
+        
+        // Controles de performance para modo ultra-responsivo
+        this.isUpdating = false; // Previne atualizações simultâneas
+        this.updateCount = 0; // Contador de atualizações
+        this.avgUpdateTime = 0; // Tempo médio de atualização
 
         this.init();
     }
 
     async init() {
-        console.log('🖥️ Inicializando CompressorInterfaceManager...');
-
-        // Status da API já foi verificado no app.js - não precisamos verificar novamente
-        console.log(`🔧 Modo de operação: ${this.useApi ? 'API' : 'Offline'}`);
+        // Inicializando interface dos compressores
 
         // Carregar compressores
         await this.loadCompressores();
@@ -40,7 +42,7 @@ export class CompressorInterfaceManager {
         // Listener para redimensionamento
         this.setupResizeListener();
 
-        console.log(`✅ Interface carregada com ${this.compressores.length} compressores`);
+        // Interface carregada
     }
 
     /**
@@ -56,7 +58,6 @@ export class CompressorInterfaceManager {
                 
                 // Re-renderizar se o layout mudou
                 if (wasMobile !== this.isMobile) {
-                    console.log(`📱 Layout alterado: ${this.isMobile ? 'Mobile' : 'Desktop'}`);
                     this.renderCompressores();
                 }
             }, 250);
@@ -71,7 +72,6 @@ export class CompressorInterfaceManager {
     async loadCompressores() {
         try {
             if (this.useApi) {
-                console.log('📡 Carregando compressores da API...');
                 const response = await apiService.getCompressores();
 
                 if (response && response.compressores) {
@@ -103,7 +103,7 @@ export class CompressorInterfaceManager {
                         })
                     );
 
-                    console.log(`✅ ${this.compressores.length} compressores carregados da API`);
+                    // Compressores carregados da API
 
                     // Monitorar mudanças nos alertas e gerar notificações
                     this.monitorarAlertasComNotificacao(this.compressores);
@@ -126,8 +126,6 @@ export class CompressorInterfaceManager {
         // Detectar tamanho da tela atual
         this.isMobile = window.innerWidth < 1024;
         
-        console.log(`📱 Renderizando ${this.compressores.length} compressores (Mobile: ${this.isMobile})`);
-
         // Limpar todas as listas
         if (this.compressorsList) this.compressorsList.innerHTML = '';
         if (this.compressorsListDesktop) this.compressorsListDesktop.innerHTML = '';
@@ -225,6 +223,8 @@ export class CompressorInterfaceManager {
             vibracao: this.extrairVibracao(compressor.apiData),
             corrente: this.extrairCorrente(compressor.apiData)
         };
+        
+        // Debug removido para performance
 
         // Definir todos os atributos necessários para o sistema de filtros
         div.setAttribute('data-id', dadosCompressor.id);
@@ -304,7 +304,8 @@ export class CompressorInterfaceManager {
         
         // Temperatura Ambiente - usando alertas da API
         if (dadosCompressor.temperaturaAmbiente !== undefined && dadosCompressor.temperaturaAmbiente !== null) {
-            const alertaApi = compressor.alertas?.temperatura_ambiente || 'normal';
+            const alertaApi = (compressor.alertas?.temperatura_ambiente && compressor.alertas.temperatura_ambiente !== '') 
+                ? compressor.alertas.temperatura_ambiente : 'normal';
             const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
                 <div class="text-center">
@@ -316,7 +317,8 @@ export class CompressorInterfaceManager {
 
         // Umidade - usando alertas da API
         if (dadosCompressor.umidade !== undefined && dadosCompressor.umidade !== null) {
-            const alertaApi = compressor.alertas?.umidade || 'normal';
+            const alertaApi = (compressor.alertas?.umidade && compressor.alertas.umidade !== '') 
+                ? compressor.alertas.umidade : 'normal';
             const emoji = this.getEmojiDoAlerta(alertaApi, 'umidade');
             const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
@@ -331,7 +333,8 @@ export class CompressorInterfaceManager {
         
         // Pressão - usando alertas da API
         if (dadosCompressor.pressao !== undefined && dadosCompressor.pressao !== null) {
-            const alertaApi = compressor.alertas?.pressao || 'normal';
+            const alertaApi = (compressor.alertas?.pressao && compressor.alertas.pressao !== '') 
+                ? compressor.alertas.pressao : 'normal';
             const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
                 <div class="text-center">
@@ -343,7 +346,8 @@ export class CompressorInterfaceManager {
 
         // Temperatura (Equipamento) - usando alertas da API
         if (dadosCompressor.temperatura !== undefined && dadosCompressor.temperatura !== null) {
-            const alertaApi = compressor.alertas?.temperatura_equipamento || 'normal';
+            const alertaApi = (compressor.alertas?.temperatura_equipamento && compressor.alertas.temperatura_equipamento !== '') 
+                ? compressor.alertas.temperatura_equipamento : 'normal';
             const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
                 <div class="text-center">
@@ -353,10 +357,11 @@ export class CompressorInterfaceManager {
             `);
         }
 
-        // Corrente
+        // Corrente - usando alertas da API
         if (dadosCompressor.corrente !== undefined && dadosCompressor.corrente !== null) {
-            const nivel = this.calcularNivelAlerta('corrente', dadosCompressor.corrente);
-            const cor = nivel === 'normal' ? 'green' : (nivel === 'critico' ? 'red' : 'orange');
+            const alertaApi = (compressor.alertas?.corrente && compressor.alertas.corrente !== '') 
+                ? compressor.alertas.corrente : 'normal';
+            const cor = this.getCorDoAlerta(alertaApi);
             metrics.push(`
                 <div class="text-center">
                     <div class="text-xs text-gray-500">Corrente</div>
@@ -378,7 +383,8 @@ export class CompressorInterfaceManager {
         `);
 
         // Vibração - usando alertas da API
-        const alertaVibracaoApi = compressor.alertas?.vibracao || 'normal';
+        const alertaVibracaoApi = (compressor.alertas?.vibracao && compressor.alertas.vibracao !== '') 
+            ? compressor.alertas.vibracao : 'normal';
         const vibracaoEmoji = alertaVibracaoApi === 'detectada' ? '⚠️' : '✅';
         const vibracaoText = alertaVibracaoApi === 'detectada' ? 'Detectada' : 'Normal';
         const vibracaoCor = alertaVibracaoApi === 'detectada' ? 'red' : 'green';
@@ -416,7 +422,8 @@ export class CompressorInterfaceManager {
         }
 
         // Vibração (se detectada via API)
-        const alertaVibracaoApi = compressor.alertas?.vibracao || 'normal';
+        const alertaVibracaoApi = (compressor.alertas?.vibracao && compressor.alertas.vibracao !== '') 
+            ? compressor.alertas.vibracao : 'normal';
         if (alertaVibracaoApi === 'detectada') {
             items.push('<span class="text-red-600">⚠️ Vibração Detectada</span>');
         }
@@ -570,7 +577,8 @@ export class CompressorInterfaceManager {
         }
 
         // Vibração - usando alertas da API
-        const alertaVibracaoApi = compressor.alertas?.vibracao || 'normal';
+        const alertaVibracaoApi = (compressor.alertas?.vibracao && compressor.alertas.vibracao !== '') 
+            ? compressor.alertas.vibracao : 'normal';
         if (alertaVibracaoApi !== undefined && alertaVibracaoApi !== null) {
             const vibracaoText = alertaVibracaoApi === 'detectada' ? 'Vibração detectada' : 'Vibração normal';
             const vibracaoCor = alertaVibracaoApi === 'detectada' ? 'text-red-600' : 'text-green-600';
@@ -903,7 +911,7 @@ export class CompressorInterfaceManager {
                     // Navegar para página de detalhes usando router
                     router.navigate(`/compressor/${compressorId}`);
                     
-                    console.log(`🔗 Navegando para compressor ${compressorId}`);
+                    // Navegando para compressor
                 });
 
                 // Adicionar também evento para teclado (acessibilidade)
@@ -929,20 +937,37 @@ export class CompressorInterfaceManager {
     }
 
     /**
-     * Configura atualização automática de status
+     * Configura atualização automática de status (ULTRA RESPONSIVO)
      */
     setupAutoStatusUpdate() {
+        console.log(`⚡ Modo responsivo: atualizações a cada ${appConfig.updateInterval.realTimeData / 1000}s`);
+        
+        // Sistema de monitoramento de performance
+        setInterval(() => {
+            if (this.updateCount > 0 && this.avgUpdateTime > 3000) { // Se média > 3s
+                console.warn('⚠️ Performance degradada detectada. Considere verificar conectividade.');
+            }
+        }, 60000); // Check a cada minuto
+        
         setInterval(async () => {
             if (this.useApi) {
                 await this.updateCompressorStatus();
             }
-        }, appConfig.updateInterval.realTimeData * 3); // A cada 6 segundos
+        }, appConfig.updateInterval.realTimeData); // A cada 10 segundos (ultra-responsivo: 30s → 10s)
     }
 
     /**
      * Atualiza status dos compressores
      */
     async updateCompressorStatus() {
+        // Prevenir atualizações simultâneas
+        if (this.isUpdating) {
+            return; // Atualização em progresso
+        }
+        
+        this.isUpdating = true;
+        const startTime = Date.now();
+        
         try {
             const response = await apiService.getCompressores();
 
@@ -974,8 +999,22 @@ export class CompressorInterfaceManager {
                     this.monitorarAlertasComNotificacao(compressoresAtualizados);
                 }
             }
+            
+            const duration = Date.now() - startTime;
+            
+            // Calcular performance média
+            this.updateCount++;
+            this.avgUpdateTime = ((this.avgUpdateTime * (this.updateCount - 1)) + duration) / this.updateCount;
+            
+            // Log apenas se performance estiver degradada
+            if (duration > 2000) {
+                console.log(`⚡ Atualização #${this.updateCount}: ${duration}ms (média: ${this.avgUpdateTime.toFixed(0)}ms)`);
+            }
         } catch (error) {
-            console.warn('Erro ao atualizar status dos compressores:', error);
+            const duration = Date.now() - startTime;
+            console.warn(`❌ Erro na atualização (${duration}ms):`, error);
+        } finally {
+            this.isUpdating = false; // Liberar para próxima atualização
         }
     }
 
@@ -1001,7 +1040,7 @@ export class CompressorInterfaceManager {
      * Recarrega compressores da API
      */
     async reloadCompressores() {
-        console.log('🔄 Recarregando compressores...');
+        // Recarregando compressores
         await this.loadCompressores();
         this.renderCompressores();
     }

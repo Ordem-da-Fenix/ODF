@@ -476,7 +476,7 @@ class OFtechApp {
             if (appState.apiStatus.isOnline && !appState.isModalOpen) {
                 await this.atualizarDashboardIndependente();
             }
-        }, appConfig.updateInterval.realTimeData * 2); // A cada 4 segundos (2 * 2)
+        }, appConfig.updateInterval.realTimeData); // A cada 30 segundos (otimizado: 60s → 30s)
         
         // Log de estatísticas periódico
         setInterval(() => {

@@ -17,7 +17,7 @@ export class Router {
     }
 
     init() {
-        console.log('🗺️ Inicializando Router...');
+        // Inicializando router
         
         // Capturar elementos da DOM
         this.dashboardView = document.getElementById('dashboard-view');
@@ -37,7 +37,7 @@ export class Router {
         // Registrar rotas padrão
         this.registerDefaultRoutes();
         
-        console.log('✅ Router configurado');
+        // Router configurado
     }
 
     /**
@@ -51,7 +51,7 @@ export class Router {
         // Rota de detalhes do compressor com parâmetro
         this.addRoute('/compressor/:id', (params) => this.showCompressorDetails(params.id));
         
-        console.log('📍 Rotas registradas: /, /compressor/:id');
+        // Rotas registradas
     }
 
     /**
@@ -68,7 +68,7 @@ export class Router {
      * @param {string} path - Caminho de destino
      */
     navigate(path) {
-        console.log(`🚀 Navegando para: ${path}`);
+        // Navegando
         window.location.hash = path;
     }
 
@@ -77,7 +77,7 @@ export class Router {
      */
     handleRouteChange() {
         const hash = window.location.hash.slice(1) || '/';
-        console.log(`🔄 Mudança de rota detectada: ${hash}`);
+        // Mudança de rota detectada
         
         // Encontrar rota correspondente
         const matchedRoute = this.matchRoute(hash);
@@ -146,12 +146,12 @@ export class Router {
      * Mostra view do dashboard principal
      */
     showDashboard() {
-        console.log('📊 Exibindo Dashboard');
+        // Exibindo Dashboard
         
         // Verificar se estamos vindo de uma página de detalhes
         // Se sim, recarregar a página para garantir que os event listeners funcionem corretamente
         if (this.currentRoute && this.currentRoute.includes('/compressor/')) {
-            console.log('🔄 Vindo de página de detalhes, recarregando...');
+            // Recarregando dados
             window.location.href = window.location.pathname + window.location.search;
             return;
         }
@@ -186,7 +186,7 @@ export class Router {
      * @param {string} compressorId - ID do compressor
      */
     showCompressorDetails(compressorId) {
-        console.log(`🔧 Exibindo detalhes do compressor: ${compressorId}`);
+        // Exibindo detalhes do compressor
         
         // Ocultar todas as views
         this.hideAllViews();
