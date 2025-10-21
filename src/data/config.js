@@ -2,24 +2,24 @@
  * Configurações da aplicação
  * Sistema focado na API
  * 
- * OTIMIZAÇÕES DE PERFORMANCE (v2.3 - PRODUÇÃO):
- * - Lista: 90s → 10s (9x mais rápido!)
- * - Modal: 60s → 15s (4x mais rápido!)  
- * - Gráficos: 15s → 8s (quase tempo real)
- * - Health Check: 5min → 3min (detecção mais rápida)
- * - Retry: 10s → 5s (reconexão mais ágil)
+ * OTIMIZAÇÕES DE PERFORMANCE (v2.4 - BALANCEADO):
+ * - Lista: 90s → 10s (mantido - responsivo)
+ * - Modal: 15s → 10s (mais rápido!)  
+ * - Gráficos: 8s → 30s (balanceado para economia de recursos)
+ * - Health Check: 5min → 3min (mantido)
+ * - Retry: 10s → 5s (mantido)
  * - Logs: Reduzidos 70% (apenas essenciais)
  */
 
 export const appConfig = {
     
-    // Intervalos de atualização (ULTRA RESPONSIVO)
+    // Intervalos de atualização (BALANCEADO)
     updateInterval: {
-        realTimeData: 10000, // 10 segundos - lista (otimizado: 30s → 10s)
-        modalData: 15000,   // 15 segundos - modal (otimizado: 45s → 15s)
-        chartData: 8000,    // 8 segundos - gráficos (otimizado: 15s → 8s)
-        healthCheck: 180000, // 3 minutos - API check (otimizado: 5min → 3min)
-        retry: 5000         // 5 segundos - retry (otimizado: 10s → 5s)
+        realTimeData: 10000, // 10 segundos - lista (mantido)
+        modalData: 10000,   // 10 segundos - modal (otimizado: 15s → 10s)
+        chartData: 30000,   // 30 segundos - gráficos (ajustado: 8s → 30s)
+        healthCheck: 180000, // 3 minutos - API check (mantido)
+        retry: 5000         // 5 segundos - retry (mantido)
     },
     
     // Configurações dos gráficos
