@@ -612,6 +612,18 @@ export class CompressorInterfaceManager {
             };
         }
 
+        // Verificar se há alertas acima do normal
+        const hasWarningAlert = Object.values(alertas || {}).some(alert =>
+            alert === 'acima_do_normal' || alert === 'warning'
+        );
+
+        if (hasWarningAlert && status === 'online') {
+            return {
+                bgColor: 'bg-orange-500',
+                animation: 'animate-pulse'
+            };
+        }
+
         switch (status) {
             case 'online':
                 return {

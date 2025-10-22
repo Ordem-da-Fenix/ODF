@@ -344,7 +344,8 @@ export class CompressorManager {
             this.aplicarCoresAlertas({
                 pressao: compressorInfo.alertas.pressao,
                 temperatura: compressorInfo.alertas.temperatura_equipamento,
-                temperaturaAmbiente: compressorInfo.alertas.temperatura_ambiente
+                temperaturaAmbiente: compressorInfo.alertas.temperatura_ambiente,
+                corrente: compressorInfo.alertas.corrente
             });
 
             // Atualizar seção de alertas abaixo do gráfico
@@ -380,44 +381,98 @@ export class CompressorManager {
      * Aplica cores dos alertas nos cards
      */
     aplicarCoresAlertas(alertas) {
-        const cards = {
-            'card-pressao': alertas.pressao,
-            'card-temperatura': alertas.temperatura,
-            'card-consumo': alertas.potencia // card de consumo mostra potência
+        const alertElements = {
+            'alerta-pressao': alertas.pressao,
+            'alerta-temperatura': alertas.temperatura,
+            'alerta-corrente': alertas.corrente,
+            'alerta-temperatura-ambiente': alertas.temperaturaAmbiente
         };
 
-        Object.entries(cards).forEach(([cardId, nivel]) => {
-            const card = document.getElementById(cardId);
-            if (card) {
-                const config = configUtils.getAlertConfig('pressao', nivel); // usando config de pressão como base
+        console.log('🎨 Aplicando cores dos alertas:', alertas);
+
+        Object.entries(alertElements).forEach(([alertId, nivel]) => {
+            const alertElement = document.getElementById(alertId);
+            const alertTexto = document.getElementById(alertId + '-texto');
+            
+            if (alertElement && alertTexto) {
+                console.log(`🎨 Alerta ${alertId}: nível ${nivel}`);
                 
-                // Remover classes antigas
-                card.classList.remove('border-red-500', 'border-yellow-500', 'border-green-500', 'border-blue-500', 'border-orange-500');
+                // Remover classes antigas de border e background
+                alertElement.classList.remove(
+                    'border-red-500', 'bg-red-50',
+                    'border-yellow-500', 'bg-yellow-50', 
+                    'border-green-500', 'bg-green-50',
+                    'border-blue-500', 'bg-blue-50',
+                    'border-orange-500', 'bg-orange-50'
+                );
                 
-                // Aplicar nova cor baseada no nível
+                // Remover classes antigas de texto
+                alertTexto.classList.remove(
+                    'text-red-600', 'text-yellow-600', 'text-green-600', 
+                    'text-blue-600', 'text-orange-600'
+                );
+                
+                // Aplicar nova cor e texto baseado no nível
+                let emoji = '🟢';
+                let texto = 'Normal';
+                
                 switch (nivel) {
                     case 'detectada':
                     case 'critico':
-                        card.classList.add('border-red-500');
+                        alertElement.classList.add('border-red-500', 'bg-red-50');
+                        alertTexto.classList.add('text-red-600');
+                        emoji = '🔴';
+                        texto = 'Crítico';
+                        console.log(`🔴 Alerta ${alertId}: cor vermelha aplicada`);
                         break;
                     case 'acima_do_normal':
                     case 'alto':
-                        card.classList.add('border-orange-500');
+                        alertElement.classList.add('border-orange-500', 'bg-orange-50');
+                        alertTexto.classList.add('text-orange-600');
+                        emoji = '🟠';
+                        texto = 'Acima do Normal';
+                        console.log(`🟠 Alerta ${alertId}: cor laranja aplicada`);
                         break;
                     case 'normal':
-                        card.classList.add('border-green-500');
+                        alertElement.classList.add('border-green-500', 'bg-green-50');
+                        alertTexto.classList.add('text-green-600');
+                        emoji = '🟢';
+                        texto = 'Normal';
+                        console.log(`🟢 Alerta ${alertId}: cor verde aplicada`);
                         break;
                     case 'abaixo_do_normal':
                     case 'baixo':
-                        card.classList.add('border-yellow-500');
+                        alertElement.classList.add('border-yellow-500', 'bg-yellow-50');
+                        alertTexto.classList.add('text-yellow-600');
+                        emoji = '🟡';
+                        texto = 'Abaixo do Normal';
+                        console.log(`🟡 Alerta ${alertId}: cor amarela aplicada`);
                         break;
                     case 'muito_baixo':
-                        card.classList.add('border-blue-500');
+                        alertElement.classList.add('border-blue-500', 'bg-blue-50');
+                        alertTexto.classList.add('text-blue-600');
+                        emoji = '🔵';
+                        texto = 'Muito Baixo';
+                        console.log(`🔵 Alerta ${alertId}: cor azul aplicada`);
                         break;
                     default:
-                        card.classList.add('border-green-500'); // padrão
+                        alertElement.classList.add('border-green-500', 'bg-green-50');
+                        alertTexto.classList.add('text-green-600');
+                        emoji = '🟢';
+                        texto = 'Normal';
+                        console.log(`🟢 Alerta ${alertId}: cor verde (padrão) aplicada`);
                         break;
                 }
+                
+                // Atualizar emoji e texto
+                const emojiElement = alertElement.querySelector('.text-2xl');
+                if (emojiElement) {
+                    emojiElement.textContent = emoji;
+                }
+                alertTexto.textContent = texto;
+                
+            } else {
+                console.warn(`⚠️ Elemento alerta ${alertId} não encontrado no DOM`);
             }
         });
     }
